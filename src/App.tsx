@@ -1,31 +1,34 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Database } from './lib/supabase-types';
 import Dashboard from './components/dashboard/Dashboard';
+import LoadingIndicator from './components/shared/LoadingIndicator';
 
 export default function App() {
   const session = useSession();
   const supabase = useSupabaseClient<Database>();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!session) {
-      navigate('/signin', { replace: true });
-      return;
-    }
+    const checkUserStatus = async () => {
+      if (!session?.user?.id) {
+        navigate('/signin', { replace: true });
+        return;
+      }
 
-    // Check if user has a profile
-    const checkProfile = async () => {
       try {
-        const { data: profile, error } = await supabase
+        // Check if user has a profile
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('id')
           .eq('id', session.user.id)
           .maybeSingle();
 
-        if (error && error.code !== 'PGRST116') {
-          throw error;
+        if (profileError && profileError.code !== 'PGRST116') {
+          throw profileError;
         }
 
         // If no profile exists, redirect to complete profile
@@ -42,17 +45,28 @@ export default function App() {
         if (isAdmin) {
           navigate('/admin', { replace: true });
         }
+
+        setLoading(false);
       } catch (error) {
-        console.error('Error checking profile:', error);
-        navigate('/signin', { replace: true });
+        console.error('Error checking user status:', error);
+        setError('Failed to load user data');
+        setLoading(false);
       }
     };
 
-    checkProfile();
+    checkUserStatus();
   }, [session, supabase, navigate]);
 
   if (!session) {
     return <Navigate to="/signin" replace />;
+  }
+
+  if (loading) {
+    return <LoadingIndicator message="Loading..." />;
+  }
+
+  if (error) {
+    return <LoadingIndicator message={error} error={error} />;
   }
 
   return <Dashboard />;
