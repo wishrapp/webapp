@@ -4,9 +4,6 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '../../lib/supabase-types';
 import LoadingIndicator from '../shared/LoadingIndicator';
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000;
-
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -14,70 +11,42 @@ export default function VerifyEmail() {
   const [error, setError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(true);
 
-  const retryOperation = async <T,>(
-    operation: () => Promise<T>,
-    retries = MAX_RETRIES
-  ): Promise<T> => {
-    try {
-      return await operation();
-    } catch (err) {
-      if (retries > 0 && err instanceof Error && err.message.includes('Failed to fetch')) {
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-        return retryOperation(operation, retries - 1);
-      }
-      throw err;
-    }
-  };
-
   useEffect(() => {
-    const verifyEmail = async () => {
+    const verifyEmailToken = async () => {
       try {
         const token = searchParams.get('token');
         const type = searchParams.get('type');
-        const email = searchParams.get('email');
 
-        if (!token || !type || !email) {
-          setError('Invalid verification link');
-          setIsVerifying(false);
-          return;
+        if (!token || !type) {
+          throw new Error('Invalid verification link');
         }
 
-        // Get the current session
-        const getSession = async () => {
-          const { data: { session }, error } = await supabase.auth.getSession();
-          if (error) throw error;
-          return session;
-        };
+        // Verify the token with Supabase
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: token,
+          type: 'signup'
+        });
 
-        const session = await retryOperation(getSession);
+        if (verifyError) throw verifyError;
 
-        if (!session) {
-          // If no session, verify the token
-          const verifyToken = async () => {
-            const { error } = await supabase.auth.verifyOtp({
-              token_hash: token,
-              type: 'signup',
-              email
-            });
-            if (error) throw error;
-          };
+        // Get the current session after verification
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
 
-          await retryOperation(verifyToken);
+        if (!session?.user) {
+          throw new Error('Verification successful but session not found');
         }
 
         // Check if profile exists
-        const checkProfile = async () => {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('email', email)
-            .maybeSingle();
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .maybeSingle();
 
-          if (error && error.code !== 'PGRST116') throw error;
-          return data;
-        };
-
-        const profile = await retryOperation(checkProfile);
+        if (profileError && profileError.code !== 'PGRST116') {
+          throw profileError;
+        }
 
         // Redirect based on profile existence
         setTimeout(() => {
@@ -90,13 +59,23 @@ export default function VerifyEmail() {
 
       } catch (error) {
         console.error('Verification error:', error);
-        setError(error instanceof Error ? error.message : 'Failed to verify email');
+        if (error instanceof Error) {
+          if (error.message.includes('JWT expired')) {
+            setError('Verification link has expired. Please request a new one.');
+          } else if (error.message.includes('Invalid token')) {
+            setError('Invalid verification link. Please try signing up again.');
+          } else {
+            setError(error.message);
+          }
+        } else {
+          setError('Failed to verify email');
+        }
       } finally {
         setIsVerifying(false);
       }
     };
 
-    verifyEmail();
+    verifyEmailToken();
   }, [searchParams, supabase, navigate]);
 
   if (isVerifying) {

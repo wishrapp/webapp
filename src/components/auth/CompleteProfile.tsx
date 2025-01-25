@@ -9,12 +9,16 @@ import { isValidPhoneNumber } from 'libphonenumber-js';
 const profileSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  username: z.string().min(3, 'Username must be at least 3 characters'),
+  username: z.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(30, 'Username must be at most 30 characters')
+    .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores, and hyphens'),
   dateOfBirth: z.string().refine(val => {
     const date = new Date(val);
     const now = new Date();
-    return date < now;
-  }, 'Invalid date of birth'),
+    const minAge = new Date(now.getFullYear() - 13, now.getMonth(), now.getDate());
+    return date <= minAge;
+  }, 'You must be at least 13 years old'),
   country: z.string().min(1, 'Country is required'),
   telephone: z.string().refine(
     (val) => isValidPhoneNumber(val),
@@ -45,7 +49,10 @@ export default function CompleteProfile() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session?.user.id) return;
+    if (!session?.user.id) {
+      navigate('/signin');
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -55,14 +62,24 @@ export default function CompleteProfile() {
       const validatedData = profileSchema.parse(formData);
 
       // Check if username is available
-      const { data: existingUser } = await supabase
+      const { data: existingUser, error: usernameError } = await supabase
         .from('profiles')
         .select('id')
         .eq('username', validatedData.username)
         .single();
 
+      if (usernameError && usernameError.code !== 'PGRST116') {
+        throw usernameError;
+      }
+
       if (existingUser) {
         throw new Error('Username is already taken');
+      }
+
+      // Get user's email from session
+      const userEmail = session.user.email;
+      if (!userEmail) {
+        throw new Error('User email not found');
       }
 
       // Create profile
@@ -73,19 +90,34 @@ export default function CompleteProfile() {
           first_name: validatedData.firstName,
           last_name: validatedData.lastName,
           username: validatedData.username,
-          email: session.user.email!,
+          email: userEmail,
           date_of_birth: validatedData.dateOfBirth,
           country: validatedData.country,
           telephone: validatedData.telephone,
           email_notifications: validatedData.emailNotifications,
-          terms_accepted: validatedData.termsAccepted
+          terms_accepted: validatedData.termsAccepted,
+          verified: true // User is already verified at this point
         });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        if (profileError.code === '23505') { // Unique constraint violation
+          throw new Error('Username is already taken');
+        }
+        throw profileError;
+      }
 
-      // Redirect to dashboard
-      navigate('/dashboard');
+      // Check if user is admin
+      const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin');
+      if (adminError) throw adminError;
+
+      // Redirect to appropriate dashboard
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
+      console.error('Error creating profile:', err);
       if (err instanceof z.ZodError) {
         const fieldErrors: Partial<Record<keyof ProfileForm, string>> = {};
         err.errors.forEach(err => {
@@ -164,6 +196,9 @@ export default function CompleteProfile() {
                 onChange={e => setFormData({ ...formData, username: e.target.value })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Only letters, numbers, underscores, and hyphens allowed
+              </p>
             </div>
 
             <div>
@@ -214,7 +249,11 @@ export default function CompleteProfile() {
                 value={formData.telephone}
                 onChange={e => setFormData({ ...formData, telephone: e.target.value })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                placeholder="+1234567890"
               />
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Include country code (e.g., +1 for US)
+              </p>
             </div>
 
             <div>
@@ -244,7 +283,7 @@ export default function CompleteProfile() {
                 />
                 <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
                   I agree to the{' '}
-                  <a href="/terms" className="text-indigo-600 hover:text-indigo-500">
+                  <a href="/terms" className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
                     Terms and Conditions
                   </a>
                 </span>
@@ -253,7 +292,7 @@ export default function CompleteProfile() {
           </div>
 
           {error && (
-            <div className="text-sm text-red-600 dark:text-red-400 text-center">
+            <div className="text-sm text-red-600 dark:text-red-400 text-center bg-red-50 dark:bg-red-900/30 p-3 rounded-md">
               {error}
             </div>
           )}

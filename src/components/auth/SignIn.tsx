@@ -24,16 +24,6 @@ export default function SignIn() {
   const [resetEmail, setResetEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear error when user starts typing
-    setError(null);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -76,8 +66,16 @@ export default function SignIn() {
           return;
         }
 
-        // If profile exists, proceed to dashboard
-        navigate('/dashboard');
+        // If profile exists, check if user is admin
+        const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin');
+        if (adminError) throw adminError;
+
+        // Redirect to appropriate dashboard
+        if (isAdmin) {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
       }
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -113,20 +111,20 @@ export default function SignIn() {
 
   if (showForgotPassword) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="max-w-md w-full space-y-8">
           <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
               Reset Password
             </h2>
             {resetSent ? (
               <div className="mt-4 text-center">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Check your email for password reset instructions.
                 </p>
                 <button
                   onClick={() => setShowForgotPassword(false)}
-                  className="mt-4 text-indigo-600 hover:text-indigo-500"
+                  className="mt-4 text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
                 >
                   Back to Sign In
                 </button>
@@ -134,7 +132,7 @@ export default function SignIn() {
             ) : (
               <form onSubmit={handleResetPassword} className="mt-8 space-y-6">
                 <div>
-                  <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Email address
                   </label>
                   <input
@@ -143,12 +141,12 @@ export default function SignIn() {
                     required
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
                   />
                 </div>
 
                 {error && (
-                  <div className="text-sm text-red-600 text-center">
+                  <div className="text-sm text-red-600 dark:text-red-400 text-center">
                     {error}
                   </div>
                 )}
@@ -157,7 +155,7 @@ export default function SignIn() {
                   <button
                     type="button"
                     onClick={() => setShowForgotPassword(false)}
-                    className="text-indigo-600 hover:text-indigo-500"
+                    className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
                   >
                     Back to Sign In
                   </button>
@@ -178,13 +176,13 @@ export default function SignIn() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
             Sign in to your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             Welcome back to Wishr
           </p>
         </div>
@@ -192,7 +190,7 @@ export default function SignIn() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Email address
               </label>
               <input
@@ -201,14 +199,14 @@ export default function SignIn() {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 value={formData.email}
-                onChange={handleChange}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Password
               </label>
               <input
@@ -217,15 +215,15 @@ export default function SignIn() {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 value={formData.password}
-                onChange={handleChange}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
             </div>
           </div>
 
           {error && (
-            <div className="text-sm text-red-600 text-center bg-red-50 p-3 rounded-md">
+            <div className="text-sm text-red-600 dark:text-red-400 text-center bg-red-50 dark:bg-red-900/30 p-3 rounded-md">
               {error}
             </div>
           )}
@@ -234,7 +232,7 @@ export default function SignIn() {
             <button
               type="button"
               onClick={() => setShowForgotPassword(true)}
-              className="text-sm text-indigo-600 hover:text-indigo-500"
+              className="text-sm text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
             >
               Forgot your password?
             </button>
@@ -252,9 +250,9 @@ export default function SignIn() {
         </form>
 
         <div className="text-center">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Don't have an account?{' '}
-            <a href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
+            <a href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
               Sign up
             </a>
           </p>

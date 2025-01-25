@@ -62,34 +62,13 @@ export default function SignUp() {
       // Validate form data
       const validatedData = signUpSchema.parse(formData);
 
-      // Check if email already exists with retry
-      const checkExistingUser = async () => {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', validatedData.email)
-          .maybeSingle();
-        
-        if (error && error.code !== 'PGRST116') throw error;
-        return data;
-      };
-
-      const existingUser = await retryOperation(checkExistingUser);
-
-      if (existingUser) {
-        throw new Error('An account with this email already exists');
-      }
-
       // Sign up with Supabase Auth with retry
       const signUp = async () => {
         const { data, error } = await supabase.auth.signUp({
           email: validatedData.email,
           password: validatedData.password,
           options: {
-            emailRedirectTo: getRedirectUrl(),
-            data: {
-              email: validatedData.email
-            }
+            emailRedirectTo: getRedirectUrl()
           }
         });
 
@@ -122,8 +101,8 @@ export default function SignUp() {
       } else if (err instanceof Error) {
         if (err.message.includes('Failed to fetch')) {
           setError('Network error. Please check your connection and try again.');
-        } else if (err.message.includes('Database error')) {
-          setError('An error occurred creating your account. Please try again.');
+        } else if (err.message.includes('User already registered')) {
+          setError('An account with this email already exists');
         } else {
           setError(err.message);
         }
@@ -141,12 +120,6 @@ export default function SignUp() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setError(null); // Clear error when user types
   };
 
   if (isSuccess) {
@@ -198,7 +171,7 @@ export default function SignUp() {
                 autoComplete="email"
                 required
                 value={formData.email}
-                onChange={handleInputChange}
+                onChange={e => setFormData({ ...formData, email: e.target.value })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
             </div>
@@ -214,7 +187,7 @@ export default function SignUp() {
                 autoComplete="new-password"
                 required
                 value={formData.password}
-                onChange={handleInputChange}
+                onChange={e => setFormData({ ...formData, password: e.target.value })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
               <p className="mt-1 text-sm text-gray-500">
