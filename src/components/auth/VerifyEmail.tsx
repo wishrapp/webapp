@@ -4,6 +4,12 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '../../lib/supabase-types';
 import LoadingIndicator from '../shared/LoadingIndicator';
 
+const getRedirectUrl = () => {
+  return process.env.NODE_ENV === 'production' 
+    ? 'https://app.wishr.com/verify'
+    : `${window.location.origin}/verify`;
+};
+
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -32,7 +38,7 @@ export default function VerifyEmail() {
           const { error: signInError } = await supabase.auth.signInWithOtp({
             email,
             options: {
-              emailRedirectTo: `${window.location.origin}/verify`
+              emailRedirectTo: getRedirectUrl()
             }
           });
 

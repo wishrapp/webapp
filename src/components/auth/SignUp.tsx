@@ -18,6 +18,13 @@ type SignUpForm = z.infer<typeof signUpSchema>;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
+const getRedirectUrl = () => {
+  // Use production URL if available, fallback to current origin for development
+  return process.env.NODE_ENV === 'production' 
+    ? 'https://app.wishr.com/verify'
+    : `${window.location.origin}/verify`;
+};
+
 export default function SignUp() {
   const navigate = useNavigate();
   const supabase = useSupabaseClient<Database>();
@@ -77,7 +84,7 @@ export default function SignUp() {
           email: validatedData.email,
           password: validatedData.password,
           options: {
-            emailRedirectTo: `${window.location.origin}/verify`,
+            emailRedirectTo: getRedirectUrl(),
             data: {
               email: validatedData.email
             }
