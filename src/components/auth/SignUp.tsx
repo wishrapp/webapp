@@ -15,6 +15,9 @@ const signUpSchema = z.object({
 
 type SignUpForm = z.infer<typeof signUpSchema>;
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
 export default function SignUp() {
   const navigate = useNavigate();
   const supabase = useSupabaseClient<Database>();
@@ -26,6 +29,21 @@ export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const retryOperation = async <T,>(
+    operation: () => Promise<T>,
+    retries = MAX_RETRIES
+  ): Promise<T> => {
+    try {
+      return await operation();
+    } catch (err) {
+      if (retries > 0 && (err instanceof Error) && err.message.includes('Failed to fetch')) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        return retryOperation(operation, retries - 1);
+      }
+      throw err;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -35,38 +53,42 @@ export default function SignUp() {
       // Validate form data
       const validatedData = signUpSchema.parse(formData);
 
-      // Check if email already exists
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', validatedData.email)
-        .maybeSingle();
+      // Check if email already exists with retry
+      const checkExistingUser = async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', validatedData.email)
+          .maybeSingle();
+        
+        if (error && error.code !== 'PGRST116') throw error;
+        return data;
+      };
+
+      const existingUser = await retryOperation(checkExistingUser);
 
       if (existingUser) {
         throw new Error('An account with this email already exists');
       }
 
-      // Sign up with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: validatedData.email,
-        password: validatedData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/verify`,
-          data: {
-            email: validatedData.email
+      // Sign up with Supabase Auth with retry
+      const signUp = async () => {
+        const { data, error } = await supabase.auth.signUp({
+          email: validatedData.email,
+          password: validatedData.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/verify`,
+            data: {
+              email: validatedData.email
+            }
           }
-        }
-      });
+        });
 
-      if (authError) {
-        if (authError.message.includes('email_provider_disabled')) {
-          throw new Error('Email sign up is currently disabled. Please contact support.');
-        }
-        if (authError.message.includes('User already registered')) {
-          throw new Error('An account with this email already exists');
-        }
-        throw authError;
-      }
+        if (error) throw error;
+        return data;
+      };
+
+      const authData = await retryOperation(signUp);
 
       if (!authData.user) {
         throw new Error('Failed to create account');
@@ -89,8 +111,9 @@ export default function SignUp() {
       if (err instanceof z.ZodError) {
         setError(err.errors[0].message);
       } else if (err instanceof Error) {
-        // Handle specific error messages
-        if (err.message.includes('Database error')) {
+        if (err.message.includes('Failed to fetch')) {
+          setError('Network error. Please check your connection and try again.');
+        } else if (err.message.includes('Database error')) {
           setError('An error occurred creating your account. Please try again.');
         } else {
           setError(err.message);
@@ -100,7 +123,11 @@ export default function SignUp() {
       }
 
       // Ensure user is signed out if there was an error
-      await supabase.auth.signOut();
+      try {
+        await supabase.auth.signOut();
+      } catch (signOutError) {
+        console.error('Error signing out:', signOutError);
+      }
       
     } finally {
       setIsLoading(false);
