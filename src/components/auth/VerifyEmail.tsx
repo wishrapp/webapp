@@ -31,7 +31,9 @@ export default function VerifyEmail() {
           // If no session, try to sign in with email
           const { error: signInError } = await supabase.auth.signInWithOtp({
             email,
-            type: 'signup'
+            options: {
+              emailRedirectTo: `${window.location.origin}/verify`
+            }
           });
 
           if (signInError) throw signInError;

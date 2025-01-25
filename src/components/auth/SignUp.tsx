@@ -35,14 +35,14 @@ export default function SignUp() {
       // Validate form data
       const validatedData = signUpSchema.parse(formData);
 
-      // Check if email already exists in auth.users
-      const { data: existingAuth } = await supabase.auth.admin.listUsers({
-        filters: {
-          email: validatedData.email
-        }
-      });
+      // Check if email already exists
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', validatedData.email)
+        .maybeSingle();
 
-      if (existingAuth?.users?.length > 0) {
+      if (existingUser) {
         throw new Error('An account with this email already exists');
       }
 
@@ -53,7 +53,7 @@ export default function SignUp() {
         options: {
           emailRedirectTo: `${window.location.origin}/verify`,
           data: {
-            email: validatedData.email // Store email in user metadata
+            email: validatedData.email
           }
         }
       });
