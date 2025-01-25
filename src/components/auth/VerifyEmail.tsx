@@ -14,26 +14,27 @@ export default function VerifyEmail() {
   useEffect(() => {
     const verifyEmailToken = async () => {
       try {
-        const token = searchParams.get('token');
-        const type = searchParams.get('type');
+        const code = searchParams.get('code');
 
-        if (!token || !type) {
+        if (!code) {
           throw new Error('Invalid verification link');
         }
 
-        // Verify the token with Supabase
-        const { error: verifyError } = await supabase.auth.verifyOtp({
-          token_hash: token,
-          type: 'signup'
-        });
-
-        if (verifyError) throw verifyError;
-
-        // Get the current session after verification
+        // Get the current session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
 
-        if (!session?.user) {
+        // If no session, try to exchange the code
+        if (!session) {
+          const { error: verifyError } = await supabase.auth.exchangeCodeForSession(code);
+          if (verifyError) throw verifyError;
+        }
+
+        // Get the session again after verification
+        const { data: { session: newSession }, error: newSessionError } = await supabase.auth.getSession();
+        if (newSessionError) throw newSessionError;
+
+        if (!newSession?.user) {
           throw new Error('Verification successful but session not found');
         }
 
@@ -41,7 +42,7 @@ export default function VerifyEmail() {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('id')
-          .eq('id', session.user.id)
+          .eq('id', newSession.user.id)
           .maybeSingle();
 
         if (profileError && profileError.code !== 'PGRST116') {
@@ -55,7 +56,7 @@ export default function VerifyEmail() {
           } else {
             navigate('/dashboard');
           }
-        }, 3000);
+        }, 2000);
 
       } catch (error) {
         console.error('Verification error:', error);
