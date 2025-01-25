@@ -6,7 +6,11 @@ import { useNavigate } from 'react-router-dom';
 
 const signUpSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters')
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
 });
 
 type SignUpForm = z.infer<typeof signUpSchema>;
@@ -31,14 +35,14 @@ export default function SignUp() {
       // Validate form data
       const validatedData = signUpSchema.parse(formData);
 
-      // Check if email already exists
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', validatedData.email)
-        .single();
+      // Check if email already exists in auth.users
+      const { data: existingAuth } = await supabase.auth.admin.listUsers({
+        filters: {
+          email: validatedData.email
+        }
+      });
 
-      if (existingUser) {
+      if (existingAuth?.users?.length > 0) {
         throw new Error('An account with this email already exists');
       }
 
@@ -47,7 +51,10 @@ export default function SignUp() {
         email: validatedData.email,
         password: validatedData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/verify`
+          emailRedirectTo: `${window.location.origin}/verify`,
+          data: {
+            email: validatedData.email // Store email in user metadata
+          }
         }
       });
 
@@ -55,48 +62,73 @@ export default function SignUp() {
         if (authError.message.includes('email_provider_disabled')) {
           throw new Error('Email sign up is currently disabled. Please contact support.');
         }
+        if (authError.message.includes('User already registered')) {
+          throw new Error('An account with this email already exists');
+        }
         throw authError;
       }
 
-      if (authData.user) {
-        // Show success message
-        setIsSuccess(true);
-        
-        // Redirect to sign in page after 5 seconds
-        setTimeout(() => {
-          navigate('/signin');
-        }, 5000);
+      if (!authData.user) {
+        throw new Error('Failed to create account');
       }
+
+      // Show success message
+      setIsSuccess(true);
+      
+      // Clear form
+      setFormData({ email: '', password: '' });
+
+      // Redirect to sign in page after 5 seconds
+      setTimeout(() => {
+        navigate('/signin');
+      }, 5000);
+
     } catch (err) {
+      console.error('Signup error:', err);
+      
       if (err instanceof z.ZodError) {
         setError(err.errors[0].message);
+      } else if (err instanceof Error) {
+        // Handle specific error messages
+        if (err.message.includes('Database error')) {
+          setError('An error occurred creating your account. Please try again.');
+        } else {
+          setError(err.message);
+        }
       } else {
-        setError(err instanceof Error ? err.message : 'An error occurred during sign up');
+        setError('An unexpected error occurred. Please try again.');
       }
-      
+
       // Ensure user is signed out if there was an error
       await supabase.auth.signOut();
+      
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setError(null); // Clear error when user types
+  };
+
   if (isSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full text-center">
+        <div className="max-w-md w-full text-center p-8 bg-white rounded-lg shadow-md">
           <h2 className="text-3xl font-extrabold text-gray-900 mb-4">
             Check your email
           </h2>
           <p className="text-gray-600 mb-4">
             We've sent a verification link to {formData.email}. Please click the link to verify your account.
           </p>
-          <p className="text-gray-500">
+          <p className="text-gray-500 mb-4">
             After verifying your email, you'll be able to sign in and complete your profile.
           </p>
           <button
             onClick={() => navigate('/signin')}
-            className="mt-4 text-indigo-600 hover:text-indigo-500"
+            className="text-indigo-600 hover:text-indigo-500 font-medium"
           >
             Go to Sign In
           </button>
@@ -107,9 +139,9 @@ export default function SignUp() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="text-center text-3xl font-extrabold text-gray-900">
             Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
@@ -130,7 +162,7 @@ export default function SignUp() {
                 autoComplete="email"
                 required
                 value={formData.email}
-                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                onChange={handleInputChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
             </div>
@@ -146,14 +178,17 @@ export default function SignUp() {
                 autoComplete="new-password"
                 required
                 value={formData.password}
-                onChange={e => setFormData({ ...formData, password: e.target.value })}
+                onChange={handleInputChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
+              <p className="mt-1 text-sm text-gray-500">
+                Password must be at least 8 characters and include uppercase, lowercase, and numbers
+              </p>
             </div>
           </div>
 
           {error && (
-            <div className="text-sm text-red-600 text-center">
+            <div className="text-sm text-red-600 text-center bg-red-50 p-3 rounded-md">
               {error}
             </div>
           )}

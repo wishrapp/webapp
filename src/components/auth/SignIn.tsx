@@ -30,6 +30,8 @@ export default function SignIn() {
       ...prev,
       [name]: value,
     }));
+    // Clear error when user starts typing
+    setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,9 +49,11 @@ export default function SignIn() {
       });
 
       if (signInError) {
-        // Handle email not confirmed error
+        // Handle specific error cases
         if (signInError.message.includes('Email not confirmed')) {
           throw new Error('Please verify your email address before signing in. Check your inbox for the verification link.');
+        } else if (signInError.message.includes('Invalid login credentials')) {
+          throw new Error('Invalid email or password. Please try again.');
         }
         throw signInError;
       }
@@ -81,7 +85,7 @@ export default function SignIn() {
       } else if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Invalid email or password');
+        setError('An unexpected error occurred. Please try again.');
       }
     } finally {
       setIsLoading(false);
@@ -221,7 +225,7 @@ export default function SignIn() {
           </div>
 
           {error && (
-            <div className="text-sm text-red-600 text-center">
+            <div className="text-sm text-red-600 text-center bg-red-50 p-3 rounded-md">
               {error}
             </div>
           )}
