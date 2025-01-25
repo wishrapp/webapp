@@ -4,11 +4,8 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '../../lib/supabase-types';
 import LoadingIndicator from '../shared/LoadingIndicator';
 
-const getRedirectUrl = () => {
-  return process.env.NODE_ENV === 'production' 
-    ? 'https://app.wishr.com/verify'
-    : `${window.location.origin}/verify`;
-};
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
@@ -17,44 +14,70 @@ export default function VerifyEmail() {
   const [error, setError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(true);
 
+  const retryOperation = async <T,>(
+    operation: () => Promise<T>,
+    retries = MAX_RETRIES
+  ): Promise<T> => {
+    try {
+      return await operation();
+    } catch (err) {
+      if (retries > 0 && err instanceof Error && err.message.includes('Failed to fetch')) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        return retryOperation(operation, retries - 1);
+      }
+      throw err;
+    }
+  };
+
   useEffect(() => {
     const verifyEmail = async () => {
       try {
         const token = searchParams.get('token');
+        const type = searchParams.get('type');
         const email = searchParams.get('email');
 
-        if (!token || !email) {
+        if (!token || !type || !email) {
           setError('Invalid verification link');
           setIsVerifying(false);
           return;
         }
 
         // Get the current session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
+        const getSession = async () => {
+          const { data: { session }, error } = await supabase.auth.getSession();
+          if (error) throw error;
+          return session;
+        };
+
+        const session = await retryOperation(getSession);
 
         if (!session) {
-          // If no session, try to sign in with email
-          const { error: signInError } = await supabase.auth.signInWithOtp({
-            email,
-            options: {
-              emailRedirectTo: getRedirectUrl()
-            }
-          });
+          // If no session, verify the token
+          const verifyToken = async () => {
+            const { error } = await supabase.auth.verifyOtp({
+              token_hash: token,
+              type: 'signup',
+              email
+            });
+            if (error) throw error;
+          };
 
-          if (signInError) throw signInError;
+          await retryOperation(verifyToken);
         }
 
         // Check if profile exists
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', email)
-          .maybeSingle();
+        const checkProfile = async () => {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', email)
+            .maybeSingle();
 
-        if (profileError && profileError.code !== 'PGRST116') {
-          throw profileError;
-        }
+          if (error && error.code !== 'PGRST116') throw error;
+          return data;
+        };
+
+        const profile = await retryOperation(checkProfile);
 
         // Redirect based on profile existence
         setTimeout(() => {
