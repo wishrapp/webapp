@@ -19,9 +19,9 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
 const getRedirectUrl = () => {
-  // Use production URL if available, fallback to current origin for development
-  return process.env.NODE_ENV === 'production' 
-    ? 'https://app.wishr.com/verify'
+  // Use environment variable if available, fallback to current origin
+  return import.meta.env.VITE_SITE_URL 
+    ? `${import.meta.env.VITE_SITE_URL}/verify`
     : `${window.location.origin}/verify`;
 };
 
@@ -53,6 +53,8 @@ export default function SignUp() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
+
     setIsLoading(true);
     setError(null);
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
-import { Database } from '../../lib/supabase-types';
+import { Database } from '../lib/supabase-types';
 import LoadingIndicator from '../shared/LoadingIndicator';
 
 const MAX_RETRIES = 3;
