@@ -4,6 +4,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { Database } from './lib/supabase-types';
 import Dashboard from './components/dashboard/Dashboard';
 import LoadingIndicator from './components/shared/LoadingIndicator';
+import ProfileCompletionModal from './components/shared/ProfileCompletionModal';
 
 export default function App() {
   const session = useSession();
@@ -11,6 +12,7 @@ export default function App() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     const checkUserStatus = async () => {
@@ -31,19 +33,19 @@ export default function App() {
           throw profileError;
         }
 
-        // If no profile exists, redirect to complete profile
+        // If no profile exists, show modal instead of redirecting
         if (!profile) {
-          navigate('/complete-profile', { replace: true });
-          return;
+          setShowProfileModal(true);
         }
 
         // Check if user is admin
         const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin');
         if (adminError) throw adminError;
 
-        // Redirect to appropriate dashboard
+        // Redirect to admin dashboard if admin
         if (isAdmin) {
           navigate('/admin', { replace: true });
+          return;
         }
 
         setLoading(false);
@@ -69,5 +71,14 @@ export default function App() {
     return <LoadingIndicator message={error} error={error} />;
   }
 
-  return <Dashboard />;
+  return (
+    <>
+      <Dashboard />
+      {showProfileModal && (
+        <ProfileCompletionModal 
+          onComplete={() => setShowProfileModal(false)}
+        />
+      )}
+    </>
+  );
 }
