@@ -25,7 +25,7 @@ const getRedirectUrl = () => {
 };
 
 const generateDefaultUsername = (email: string): string => {
-  const baseUsername = email.split('@')[0].toLowerCase();
+  const baseUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
   const randomNum = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
   return `${baseUsername}${randomNum}`;
 };
@@ -58,9 +58,10 @@ export default function SignUp() {
       const defaultUsername = generateDefaultUsername(validatedData.email);
 
       // Get default country using geolocation API
-      let defaultCountry = 'US';
+      let defaultCountry = 'GB'; // Default to UK
       try {
         const response = await fetch('https://ipapi.co/json/');
+        if (!response.ok) throw new Error('Failed to fetch country');
         const data = await response.json();
         if (data.country) {
           defaultCountry = data.country;
@@ -69,7 +70,7 @@ export default function SignUp() {
         console.error('Error fetching country:', error);
       }
 
-      // Set default date of birth
+      // Set default date of birth to January 1, 2000
       const defaultDateOfBirth = '2000-01-01';
 
       // Sign up with Supabase Auth

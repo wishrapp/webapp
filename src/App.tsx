@@ -20,37 +20,40 @@ export default function App() {
     }
 
     try {
-      // Generate a unique username from email
-      const baseUsername = session.user.email.split('@')[0];
-      let username = baseUsername;
-      let counter = 1;
+      // Get user metadata from auth
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
 
-      // Keep trying until we find a unique username
-      while (true) {
-        const { data: existingUser, error: checkError } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('username', username)
-          .maybeSingle();
+      const metadata = user?.user_metadata;
+      if (!metadata) throw new Error('User metadata not found');
 
-        if (checkError) throw checkError;
-        if (!existingUser) break;
-        username = `${baseUsername}${counter++}`;
+      // Get country using geolocation API
+      let country = 'US'; // Default to United States
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        if (!response.ok) throw new Error('Failed to fetch country');
+        const data = await response.json();
+        if (data.country) {
+          country = data.country;
+        }
+      } catch (error) {
+        console.error('Error fetching country:', error);
+        // Keep default US if API fails
       }
 
-      // Create the profile
+      // Create the profile with metadata values
       const { error: insertError } = await supabase
         .from('profiles')
         .insert({
           id: session.user.id,
           email: session.user.email,
-          username: username,
-          first_name: '',
-          last_name: '',
-          country: 'US',
-          date_of_birth: new Date().toISOString(),
-          email_notifications: true,
-          terms_accepted: true,
+          username: metadata.username || session.user.email.split('@')[0],
+          first_name: metadata.first_name || '',
+          last_name: metadata.last_name || '',
+          country: metadata.country || country,
+          date_of_birth: metadata.date_of_birth || '2000-01-01',
+          email_notifications: metadata.email_notifications || true,
+          terms_accepted: metadata.terms_accepted || true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
