@@ -4,7 +4,6 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { Database } from './lib/supabase-types';
 import Dashboard from './components/dashboard/Dashboard';
 import LoadingIndicator from './components/shared/LoadingIndicator';
-import ProfileReminderModal from './components/shared/ProfileReminderModal';
 
 export default function App() {
   const session = useSession();
@@ -74,9 +73,6 @@ export default function App() {
   return (
     <>
       <Dashboard />
-      {showProfileReminder && (
-        <ProfileReminderModal onClose={() => setShowProfileReminder(false)} />
-      )}
     </>
   );
 }
