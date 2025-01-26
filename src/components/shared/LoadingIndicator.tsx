@@ -1,7 +1,7 @@
 import { Loader2, AlertCircle } from 'lucide-react';
 
 interface LoadingIndicatorProps {
-  message?: string;
+  message: string;
   error?: string | null;
   onRetry?: () => void;
 }

@@ -57,11 +57,12 @@ export default function Dashboard() {
   }
 
   if (profileError || wishlistError) {
-    return <LoadingIndicator message={profileError || wishlistError} error={profileError || wishlistError} />;
+    const errorMessage = profileError || wishlistError || 'An error occurred';
+    return <LoadingIndicator message="Error" error={errorMessage} />;
   }
 
   if (!profile) {
-    return <LoadingIndicator message="Profile not found" />;
+    return <LoadingIndicator message="Error" error="Profile not found" />;
   }
 
   return (
