@@ -23,7 +23,7 @@ import AdminAffiliates from './components/admin/Affiliates'
 import './index.css'
 
 // Initialize Supabase session from localStorage
-const initialSession = localStorage.getItem('sb-eawuqfqcrhwqdujwiorf-auth-token');
+const initialSession = localStorage.getItem('supabase.auth.token');
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
