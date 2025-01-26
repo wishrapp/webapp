@@ -7,7 +7,8 @@ import {
   Users, 
   Mail, 
   Store, 
-  LogOut 
+  LogOut,
+  Gift
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -66,14 +67,23 @@ export default function AdminLayout() {
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Wishr Admin</h1>
+                <div className="flex items-center space-x-3">
+                  <Gift className="w-8 h-8 text-[#9333ea]" />
+                  <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    wishr
+                  </span>
+                  <span className="text-gray-400 dark:text-gray-500 px-3">|</span>
+                  <span className="text-gray-600 dark:text-gray-400 font-medium">
+                    Admin Panel
+                  </span>
+                </div>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                 <a
                   href="/admin"
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors
                     ${isActivePath('/admin') && location.pathname === '/admin'
-                      ? 'border-indigo-500 text-gray-900 dark:text-white'
+                      ? 'border-[#9333ea] text-gray-900 dark:text-white'
                       : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                 >
@@ -84,7 +94,7 @@ export default function AdminLayout() {
                   href="/admin/users"
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors
                     ${isActivePath('/admin/users')
-                      ? 'border-indigo-500 text-gray-900 dark:text-white'
+                      ? 'border-[#9333ea] text-gray-900 dark:text-white'
                       : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                 >
@@ -95,7 +105,7 @@ export default function AdminLayout() {
                   href="/admin/emails"
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors
                     ${isActivePath('/admin/emails')
-                      ? 'border-indigo-500 text-gray-900 dark:text-white'
+                      ? 'border-[#9333ea] text-gray-900 dark:text-white'
                       : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                 >
@@ -106,7 +116,7 @@ export default function AdminLayout() {
                   href="/admin/affiliates"
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors
                     ${isActivePath('/admin/affiliates')
-                      ? 'border-indigo-500 text-gray-900 dark:text-white'
+                      ? 'border-[#9333ea] text-gray-900 dark:text-white'
                       : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                 >
