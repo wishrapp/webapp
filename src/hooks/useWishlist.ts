@@ -21,39 +21,54 @@ export function useWishlist() {
   const [occasions, setOccasions] = useState<Occasion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isConnectionError, setIsConnectionError] = useState(false);
+
+  const fetchData = async () => {
+    if (!session?.user.id) return;
+
+    try {
+      setIsConnectionError(false);
+      const [itemsResponse, occasionsResponse] = await Promise.all([
+        supabase
+          .from('items')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('occasions')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('date', { ascending: true }),
+      ]);
+
+      if (itemsResponse.error) {
+        if (itemsResponse.error.message.includes('Failed to fetch')) {
+          setIsConnectionError(true);
+          return;
+        }
+        throw itemsResponse.error;
+      }
+
+      if (occasionsResponse.error) {
+        if (occasionsResponse.error.message.includes('Failed to fetch')) {
+          setIsConnectionError(true);
+          return;
+        }
+        throw occasionsResponse.error;
+      }
+
+      setItems(itemsResponse.data);
+      setOccasions(occasionsResponse.data);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching wishlist data:', error);
+      setError('Failed to load wishlist data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!session?.user.id) return;
-
-      try {
-        const [itemsResponse, occasionsResponse] = await Promise.all([
-          supabase
-            .from('items')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .order('created_at', { ascending: false }),
-          supabase
-            .from('occasions')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .order('date', { ascending: true }),
-        ]);
-
-        if (itemsResponse.error) throw itemsResponse.error;
-        if (occasionsResponse.error) throw occasionsResponse.error;
-
-        setItems(itemsResponse.data);
-        setOccasions(occasionsResponse.data);
-        setError(null);
-      } catch (error) {
-        console.error('Error fetching wishlist data:', error);
-        setError('Failed to load wishlist data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, [session, supabase]);
 
@@ -72,16 +87,7 @@ export function useWishlist() {
       });
 
       if (error) throw error;
-
-      // Refresh items list
-      const { data, error: fetchError } = await supabase
-        .from('items')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
-
-      if (fetchError) throw fetchError;
-      setItems(data || []);
+      await fetchData();
       return true;
     } catch (error) {
       console.error('Error adding item:', error);
@@ -107,16 +113,7 @@ export function useWishlist() {
         .eq('user_id', session.user.id);
 
       if (error) throw error;
-
-      // Refresh items list
-      const { data, error: fetchError } = await supabase
-        .from('items')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
-
-      if (fetchError) throw fetchError;
-      setItems(data || []);
+      await fetchData();
       return true;
     } catch (error) {
       console.error('Error updating item:', error);
@@ -132,7 +129,6 @@ export function useWishlist() {
         .eq('id', itemId);
 
       if (error) throw error;
-
       setItems(items.filter(item => item.id !== itemId));
       return true;
     } catch (error) {
@@ -146,6 +142,8 @@ export function useWishlist() {
     occasions,
     loading,
     error,
+    isConnectionError,
+    retry: fetchData,
     addItem,
     updateItem,
     deleteItem,

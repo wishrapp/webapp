@@ -11,6 +11,7 @@ import VerifyEmail from './components/auth/VerifyEmail'
 import WishlistManager from './components/features/WishlistManager'
 import WishlistViewer from './components/features/WishlistViewer'
 import OccasionManager from './components/features/OccasionManager'
+import ProfileEditor from './components/features/ProfileEditor'
 import Messages from './components/features/Messages'
 import AdminLayout from './components/admin/AdminLayout'
 import AdminDashboard from './components/admin/Dashboard'
@@ -41,6 +42,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/wishlists" element={<WishlistManager />} />
             <Route path="/wishlists/:userId" element={<WishlistViewer />} />
             <Route path="/occasions" element={<OccasionManager />} />
+            <Route path="/profile/edit" element={<ProfileEditor />} />
             <Route path="/messages" element={<Messages />} />
             
             {/* Admin Routes */}

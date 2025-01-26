@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../../lib/theme';
 import { useProfile } from '../../hooks/useProfile';
@@ -13,15 +13,15 @@ import ShareWishlist from '../shared/ShareWishlist';
 import SearchModal from '../search/SearchModal';
 import { Database } from '../../lib/supabase-types';
 import LoadingIndicator from '../shared/LoadingIndicator';
-import { useContext } from 'react';
+import ConnectionError from '../shared/ConnectionError';
 
 type Item = Database['public']['Tables']['items']['Row'];
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { theme, setTheme } = useContext(ThemeContext);
-  const { profile, unreadMessages, loading: profileLoading, error: profileError } = useProfile();
-  const { items, occasions, loading: wishlistLoading, addItem, updateItem, deleteItem } = useWishlist();
+  const { profile, unreadMessages, loading: profileLoading, error: profileError, isConnectionError: profileConnectionError, retry: retryProfile } = useProfile();
+  const { items, occasions, loading: wishlistLoading, error: wishlistError, isConnectionError: wishlistConnectionError, retry: retryWishlist, addItem, updateItem, deleteItem } = useWishlist();
 
   // State for modals
   const [showAddItemModal, setShowAddItemModal] = useState(false);
@@ -40,12 +40,24 @@ export default function Dashboard() {
     setShowEditItemModal(true);
   };
 
+  if (profileConnectionError || wishlistConnectionError) {
+    return (
+      <ConnectionError 
+        message="Unable to connect to the server. Please check your internet connection."
+        onRetry={() => {
+          retryProfile();
+          retryWishlist();
+        }}
+      />
+    );
+  }
+
   if (profileLoading || wishlistLoading) {
     return <LoadingIndicator message="Loading..." />;
   }
 
-  if (profileError) {
-    return <LoadingIndicator message="Error loading profile" error={profileError} />;
+  if (profileError || wishlistError) {
+    return <LoadingIndicator message={profileError || wishlistError} error={profileError || wishlistError} />;
   }
 
   if (!profile) {

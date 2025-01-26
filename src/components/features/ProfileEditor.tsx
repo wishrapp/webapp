@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { countries } from '../../lib/countries';
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import { uploadProfileImage } from '../../lib/image';
+import LoadingIndicator from '../shared/LoadingIndicator';
+import ConnectionError from '../shared/ConnectionError';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -18,6 +20,7 @@ export default function ProfileEditor() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isConnectionError, setIsConnectionError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -28,13 +31,20 @@ export default function ProfileEditor() {
       }
 
       try {
+        setIsConnectionError(false);
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes('Failed to fetch')) {
+            setIsConnectionError(true);
+            return;
+          }
+          throw error;
+        }
         setProfile(data);
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -55,16 +65,10 @@ export default function ProfileEditor() {
       setUploadProgress(0);
       setUploadError(null);
 
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        throw new Error('File must be an image');
-      }
-
       setUploadProgress(10);
       const publicUrl = await uploadProfileImage(session.user.id, file);
       setUploadProgress(90);
 
-      // Update profile with new image URL
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ profile_image_url: publicUrl })
@@ -75,7 +79,6 @@ export default function ProfileEditor() {
       setProfile({ ...profile, profile_image_url: publicUrl });
       setUploadProgress(100);
 
-      // Reset progress after a delay
       setTimeout(() => setUploadProgress(0), 1000);
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -92,7 +95,7 @@ export default function ProfileEditor() {
     setError(null);
 
     try {
-      if (!isValidPhoneNumber(profile.telephone)) {
+      if (profile.telephone && !isValidPhoneNumber(profile.telephone)) {
         throw new Error('Invalid phone number');
       }
 
@@ -119,40 +122,37 @@ export default function ProfileEditor() {
     }
   };
 
-  if (loading) {
+  if (isConnectionError) {
     return (
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <p>Loading...</p>
-        </div>
-      </div>
+      <ConnectionError 
+        message="Unable to connect to the server. Please check your internet connection."
+        onRetry={() => window.location.reload()}
+      />
     );
   }
 
+  if (loading) {
+    return <LoadingIndicator message="Loading profile..." />;
+  }
+
   if (!profile) {
-    return (
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <p className="text-red-600">Failed to load profile</p>
-        </div>
-      </div>
-    );
+    return <LoadingIndicator message="Profile not found" error="Failed to load profile" />;
   }
 
   return (
     <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <div className="px-4 py-6 sm:px-0">
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
           <h2 className="text-2xl font-bold mb-6">Edit Profile</h2>
 
           {error && (
-            <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-md">
+            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-md">
               {error}
             </div>
           )}
 
           {uploadError && (
-            <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-md">
+            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-md">
               {uploadError}
             </div>
           )}
@@ -182,11 +182,11 @@ export default function ProfileEditor() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="bg-white dark:bg-gray-700 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
                 >
                   Change Photo
                 </button>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   JPG, PNG or GIF (max. 5MB)
                 </p>
               </div>
@@ -194,36 +194,33 @@ export default function ProfileEditor() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Rest of the form remains unchanged */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   First Name
                 </label>
                 <input
                   type="text"
-                  required
-                  value={profile.first_name}
+                  value={profile.first_name || ''}
                   onChange={e => setProfile({ ...profile, first_name: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Last Name
                 </label>
                 <input
                   type="text"
-                  required
-                  value={profile.last_name}
+                  value={profile.last_name || ''}
                   onChange={e => setProfile({ ...profile, last_name: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Username
                 </label>
                 <input
@@ -231,19 +228,18 @@ export default function ProfileEditor() {
                   required
                   value={profile.username}
                   onChange={e => setProfile({ ...profile, username: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Country
                 </label>
                 <select
-                  required
-                  value={profile.country}
+                  value={profile.country || ''}
                   onChange={e => setProfile({ ...profile, country: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                 >
                   <option value="">Select a country</option>
                   {countries.map(country => (
@@ -255,15 +251,14 @@ export default function ProfileEditor() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Phone Number
                 </label>
                 <input
                   type="tel"
-                  required
-                  value={profile.telephone}
+                  value={profile.telephone || ''}
                   onChange={e => setProfile({ ...profile, telephone: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
 
@@ -275,7 +270,7 @@ export default function ProfileEditor() {
                     onChange={e => setProfile({ ...profile, email_notifications: e.target.checked })}
                     className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   />
-                  <span className="ml-2 text-sm text-gray-600">
+                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
                     Receive email notifications
                   </span>
                 </label>
@@ -286,7 +281,7 @@ export default function ProfileEditor() {
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-500"
               >
                 Cancel
               </button>

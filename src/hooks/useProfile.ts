@@ -13,60 +13,60 @@ export function useProfile() {
   const [unreadMessages, setUnreadMessages] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isConnectionError, setIsConnectionError] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!session?.user.id) {
-        setLoading(false);
-        navigate('/signin');
-        return;
-      }
+  const fetchData = async () => {
+    if (!session?.user.id) {
+      setLoading(false);
+      navigate('/signin');
+      return;
+    }
 
-      try {
-        // Fetch profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle(); // Use maybeSingle() instead of single()
+    try {
+      setIsConnectionError(false);
+      // Fetch profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .maybeSingle();
 
-        // Handle profile not found case
-        if (!profileData && (!profileError || profileError.code === 'PGRST116')) {
-          navigate('/complete-profile');
+      if (profileError) {
+        if (profileError.message.includes('Failed to fetch')) {
+          setIsConnectionError(true);
           return;
         }
-
-        // Handle other errors
-        if (profileError && profileError.code !== 'PGRST116') {
-          throw profileError;
-        }
-
-        setProfile(profileData);
-        setError(null);
-
-        // Fetch unread messages count
-        const { count, error: messageError } = await supabase
-          .from('messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('recipient_id', session.user.id)
-          .eq('read', false);
-
-        if (messageError) throw messageError;
-        setUnreadMessages(count || 0);
-
-      } catch (error) {
-        console.error('Error fetching profile data:', error);
-        setError('Failed to load profile data');
-        
-        // If there's a connection error, redirect to sign in
-        if (error instanceof Error && error.message.includes('Failed to fetch')) {
-          navigate('/signin');
-        }
-      } finally {
-        setLoading(false);
+        throw profileError;
       }
-    };
 
+      setProfile(profileData);
+      setError(null);
+
+      // Fetch unread messages count
+      const { count, error: messageError } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('recipient_id', session.user.id)
+        .eq('read', false);
+
+      if (messageError) {
+        if (messageError.message.includes('Failed to fetch')) {
+          setIsConnectionError(true);
+          return;
+        }
+        throw messageError;
+      }
+
+      setUnreadMessages(count || 0);
+    } catch (error) {
+      console.error('Error fetching profile data:', error);
+      setError('Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [session, supabase, navigate]);
 
@@ -74,6 +74,8 @@ export function useProfile() {
     profile,
     unreadMessages,
     loading,
-    error
+    error,
+    isConnectionError,
+    retry: fetchData
   };
 }
