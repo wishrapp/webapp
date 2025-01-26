@@ -75,7 +75,7 @@ export default function App() {
       setIsConnectionError(false);
       setError(null);
 
-      // Check if user has a profile
+      // Check if user has a profile and is not suspended
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -88,6 +88,14 @@ export default function App() {
           return;
         }
         throw profileError;
+      }
+
+      // If user is suspended, sign them out
+      if (profile?.suspended) {
+        await supabase.auth.signOut();
+        setError('Your account has been suspended. Please contact support@wishr.com if you require further assistance.');
+        navigate('/signin', { replace: true });
+        return;
       }
 
       // Create basic profile if it doesn't exist

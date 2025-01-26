@@ -6,7 +6,7 @@ import { ThemeProvider } from './components/shared/ThemeProvider'
 import { supabase } from './lib/supabase'
 import App from './App'
 import SignUp from './components/auth/SignUp/index'
-import SignIn from './components/auth/SignIn'
+import SignIn from './components/auth/SignIn/index' // Updated import path
 import VerifyEmail from './components/auth/VerifyEmail'
 import ResetPassword from './components/auth/ResetPassword'
 import WishlistManager from './components/features/WishlistManager'
