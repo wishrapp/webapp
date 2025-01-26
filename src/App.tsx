@@ -5,7 +5,6 @@ import { Database } from './lib/supabase-types';
 import Dashboard from './components/dashboard/Dashboard';
 import LoadingIndicator from './components/shared/LoadingIndicator';
 import ConnectionError from './components/shared/ConnectionError';
-import { getCountryFromIP } from './lib/geolocation';
 
 export default function App() {
   const session = useSession();
@@ -21,33 +20,37 @@ export default function App() {
     }
 
     try {
-      // Get user metadata from the session
-      const metadata = session.user.user_metadata;
+      // Generate a unique username from email
+      const baseUsername = session.user.email.split('@')[0];
+      let username = baseUsername;
+      let counter = 1;
 
-      // Create unique username by combining email prefix with last 4 chars of UUID
-      const emailPrefix = session.user.email.split('@')[0];
-      const uuidSuffix = session.user.id.slice(-4);
-      const defaultUsername = `${emailPrefix}${uuidSuffix}`;
+      // Keep trying until we find a unique username
+      while (true) {
+        const { data: existingUser, error: checkError } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', username)
+          .maybeSingle();
 
-      // Try to detect country from IP if not provided
-      let country = metadata?.country;
-      if (!country) {
-        country = await getCountryFromIP();
+        if (checkError) throw checkError;
+        if (!existingUser) break;
+        username = `${baseUsername}${counter++}`;
       }
 
-      // Create the profile with metadata if available
+      // Create the profile
       const { error: insertError } = await supabase
         .from('profiles')
         .insert({
           id: session.user.id,
           email: session.user.email,
-          username: metadata?.username || defaultUsername,
-          first_name: metadata?.first_name || '',
-          last_name: metadata?.last_name || '',
-          country: country,
-          date_of_birth: metadata?.date_of_birth || '2000-01-01', // Default to 2000-01-01
-          email_notifications: metadata?.email_notifications ?? true,
-          terms_accepted: metadata?.terms_accepted ?? true,
+          username: username,
+          first_name: '',
+          last_name: '',
+          country: 'US',
+          date_of_birth: new Date().toISOString(),
+          email_notifications: true,
+          terms_accepted: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });

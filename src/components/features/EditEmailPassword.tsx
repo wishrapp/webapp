@@ -38,18 +38,6 @@ export default function EditEmailPassword({ onClose, currentEmail }: EditEmailPa
         throw new Error('Please enter your current password to change email');
       }
 
-      // First verify current password if changing email
-      if (email !== currentEmail) {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: currentEmail,
-          password: currentPassword
-        });
-
-        if (signInError) {
-          throw new Error('Current password is incorrect');
-        }
-      }
-
       // Update password if provided
       if (password) {
         const { error: passwordError } = await supabase.auth.updateUser({
@@ -62,8 +50,34 @@ export default function EditEmailPassword({ onClose, currentEmail }: EditEmailPa
 
       // Update email if changed
       if (email !== currentEmail) {
-        const { error: emailError } = await supabase.auth.updateUser({
-          email: email
+        // First verify current password
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: currentEmail,
+          password: currentPassword
+        });
+
+        if (signInError) {
+          throw new Error('Current password is incorrect');
+        }
+
+        // Check if new email is already in use
+        const { data: existingUser, error: checkError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', email)
+          .maybeSingle();
+
+        if (checkError) throw checkError;
+        if (existingUser) {
+          throw new Error('This email address is already in use');
+        }
+
+        // Update email using signInWithOtp instead of updateUser
+        const { error: emailError } = await supabase.auth.signInWithOtp({
+          email: email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/profile/edit`
+          }
         });
 
         if (emailError) throw emailError;

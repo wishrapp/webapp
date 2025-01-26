@@ -27,20 +27,10 @@ export const supabase = createClient<Database>(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
+      storage: localStorage,
+      storageKey: 'sb-eawuqfqcrhwqdujwiorf-auth-token',
       detectSessionInUrl: true,
-      flowType: 'pkce',
-      storage: {
-        getItem: (key) => {
-          const value = localStorage.getItem(key);
-          return value ? JSON.parse(value) : null;
-        },
-        setItem: (key, value) => {
-          localStorage.setItem(key, JSON.stringify(value));
-        },
-        removeItem: (key) => {
-          localStorage.removeItem(key);
-        }
-      }
+      flowType: 'pkce'
     }
   }
 );
@@ -48,10 +38,8 @@ export const supabase = createClient<Database>(
 // Listen for auth state changes
 supabase.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' && session) {
-    // Store session in localStorage
-    localStorage.setItem('supabase.auth.token', JSON.stringify(session));
+    localStorage.setItem('sb-eawuqfqcrhwqdujwiorf-auth-token', JSON.stringify(session));
   } else if (event === 'SIGNED_OUT') {
-    // Clear session from localStorage
-    localStorage.removeItem('supabase.auth.token');
+    localStorage.removeItem('sb-eawuqfqcrhwqdujwiorf-auth-token');
   }
 });
