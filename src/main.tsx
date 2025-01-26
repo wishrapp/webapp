@@ -8,10 +8,9 @@ import App from './App'
 import SignUp from './components/auth/SignUp'
 import SignIn from './components/auth/SignIn'
 import VerifyEmail from './components/auth/VerifyEmail'
-import CompleteProfile from './components/auth/CompleteProfile'
 import WishlistManager from './components/features/WishlistManager'
 import WishlistViewer from './components/features/WishlistViewer'
-import OccasionManager from './components/features/OccasionManager/OccasionManager'
+import OccasionManager from './components/features/OccasionManager'
 import ProfileEditor from './components/features/ProfileEditor'
 import Messages from './components/features/Messages'
 import AdminLayout from './components/admin/AdminLayout'
@@ -37,7 +36,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/verify" element={<VerifyEmail />} />
-            <Route path="/complete-profile" element={<CompleteProfile />} />
             
             {/* Protected Routes */}
             <Route path="/dashboard" element={<App />} />

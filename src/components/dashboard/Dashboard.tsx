@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../../lib/theme';
 import { useProfile } from '../../hooks/useProfile';
@@ -11,7 +11,6 @@ import EditItemForm from './EditItemForm';
 import ContactForm from '../shared/ContactForm';
 import ShareWishlist from '../shared/ShareWishlist';
 import SearchModal from '../search/SearchModal';
-import ProfileCompletion from './ProfileCompletion';
 import { Database } from '../../lib/supabase-types';
 import LoadingIndicator from '../shared/LoadingIndicator';
 import { useContext } from 'react';
@@ -30,19 +29,11 @@ export default function Dashboard() {
   const [showContactForm, setShowContactForm] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const [showProfileCompletion, setShowProfileCompletion] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
 
   // State for item display options
   const [showPurchased, setShowPurchased] = useState(true);
   const [sortBy, setSortBy] = useState<string>('newest');
-
-  useEffect(() => {
-    // Show profile completion modal if profile is incomplete
-    if (profile && (!profile.username || !profile.first_name || !profile.last_name)) {
-      setShowProfileCompletion(true);
-    }
-  }, [profile]);
 
   const handleEditItem = (item: Item) => {
     setEditingItem(item);
@@ -145,12 +136,6 @@ export default function Dashboard() {
           <SearchModal
             onClose={() => setShowSearchModal(false)}
             onRequestSent={() => setShowSearchModal(false)}
-          />
-        )}
-        {showProfileCompletion && (
-          <ProfileCompletion
-            onComplete={() => setShowProfileCompletion(false)}
-            onClose={() => setShowProfileCompletion(false)}
           />
         )}
       </div>

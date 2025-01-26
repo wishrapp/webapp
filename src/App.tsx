@@ -4,7 +4,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { Database } from './lib/supabase-types';
 import Dashboard from './components/dashboard/Dashboard';
 import LoadingIndicator from './components/shared/LoadingIndicator';
-import ProfileCompletionModal from './components/shared/ProfileCompletionModal';
+import ProfileReminderModal from './components/shared/ProfileReminderModal';
 
 export default function App() {
   const session = useSession();
@@ -12,7 +12,7 @@ export default function App() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showProfileReminder, setShowProfileReminder] = useState(false);
 
   useEffect(() => {
     const checkUserStatus = async () => {
@@ -25,7 +25,7 @@ export default function App() {
         // Check if user has a profile
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('id')
+          .select('*')
           .eq('id', session.user.id)
           .maybeSingle();
 
@@ -33,9 +33,9 @@ export default function App() {
           throw profileError;
         }
 
-        // If no profile exists, show modal instead of redirecting
-        if (!profile) {
-          setShowProfileModal(true);
+        // If profile is incomplete, show reminder
+        if (!profile || !profile.username) {
+          setShowProfileReminder(true);
         }
 
         // Check if user is admin
@@ -74,10 +74,8 @@ export default function App() {
   return (
     <>
       <Dashboard />
-      {showProfileModal && (
-        <ProfileCompletionModal 
-          onComplete={() => setShowProfileModal(false)}
-        />
+      {showProfileReminder && (
+        <ProfileReminderModal onClose={() => setShowProfileReminder(false)} />
       )}
     </>
   );
