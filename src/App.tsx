@@ -15,17 +15,40 @@ export default function App() {
   const [isConnectionError, setIsConnectionError] = useState(false);
 
   const createBasicProfile = async () => {
+    if (!session?.user?.id || !session?.user?.email) {
+      throw new Error('User session is invalid');
+    }
+
     try {
-      const { error: profileError } = await supabase
+      // Generate a unique username from email
+      const baseUsername = session.user.email.split('@')[0];
+      let username = baseUsername;
+      let counter = 1;
+
+      // Keep trying until we find a unique username
+      while (true) {
+        const { data: existingUser, error: checkError } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', username)
+          .maybeSingle();
+
+        if (checkError) throw checkError;
+        if (!existingUser) break;
+        username = `${baseUsername}${counter++}`;
+      }
+
+      // Create the profile
+      const { error: insertError } = await supabase
         .from('profiles')
         .insert({
-          id: session!.user.id,
-          email: session!.user.email!,
-          username: session!.user.email!.split('@')[0],
+          id: session.user.id,
+          email: session.user.email,
+          username: username,
           first_name: '',
           last_name: '',
-          date_of_birth: new Date().toISOString(),
           country: 'US',
+          date_of_birth: new Date().toISOString(),
           telephone: '',
           email_notifications: true,
           terms_accepted: true,
@@ -33,9 +56,7 @@ export default function App() {
           updated_at: new Date().toISOString()
         });
 
-      if (profileError && profileError.code !== '23505') { // Ignore unique constraint violations
-        throw profileError;
-      }
+      if (insertError) throw insertError;
     } catch (error) {
       console.error('Error creating profile:', error);
       throw error;
@@ -49,10 +70,13 @@ export default function App() {
     }
 
     try {
+      setIsConnectionError(false);
+      setError(null);
+
       // Check if user has a profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('*')
         .eq('id', session.user.id)
         .maybeSingle();
 
@@ -86,10 +110,9 @@ export default function App() {
       }
 
       setLoading(false);
-      setIsConnectionError(false);
     } catch (error) {
       console.error('Error checking user status:', error);
-      setError('Failed to load user data');
+      setError('Failed to load user data. Please try again.');
       setLoading(false);
     }
   };
@@ -116,7 +139,13 @@ export default function App() {
   }
 
   if (error) {
-    return <LoadingIndicator message={error} error={error} />;
+    return (
+      <LoadingIndicator 
+        message="Error" 
+        error={error}
+        onRetry={checkUserStatus}
+      />
+    );
   }
 
   return <Dashboard />;
