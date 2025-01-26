@@ -35,11 +35,19 @@ export default function MenuBar({
 
   const handleSignOut = async () => {
     try {
+      // First clear any stored session data
+      localStorage.removeItem('sb-eawuqfqcrhwqdujwiorf-auth-token');
+      
+      // Then sign out from Supabase
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      // Finally call the onSignOut callback
       onSignOut();
     } catch (error) {
       console.error('Error signing out:', error);
+      // Even if there's an error, try to navigate to sign in
+      navigate('/signin', { replace: true });
     }
   };
 
