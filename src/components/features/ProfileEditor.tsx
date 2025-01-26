@@ -6,6 +6,7 @@ import { countries } from '../../lib/countries';
 import { uploadProfileImage } from '../../lib/image';
 import LoadingIndicator from '../shared/LoadingIndicator';
 import ConnectionError from '../shared/ConnectionError';
+import EditEmailPassword from './EditEmailPassword';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -20,6 +21,7 @@ export default function ProfileEditor() {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isConnectionError, setIsConnectionError] = useState(false);
+  const [showEmailPassword, setShowEmailPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -101,6 +103,7 @@ export default function ProfileEditor() {
           last_name: profile.last_name,
           username: profile.username,
           country: profile.country,
+          date_of_birth: profile.date_of_birth,
           email_notifications: profile.email_notifications,
         })
         .eq('id', session.user.id);
@@ -137,7 +140,15 @@ export default function ProfileEditor() {
     <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <div className="px-4 py-6 sm:px-0">
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h2 className="text-2xl font-bold mb-6">Edit Profile</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">Edit Profile</h2>
+            <button
+              onClick={() => setShowEmailPassword(true)}
+              className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+            >
+              Change Email/Password
+            </button>
+          </div>
 
           {error && (
             <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-md">
@@ -241,6 +252,18 @@ export default function ProfileEditor() {
                 </select>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Date of Birth
+                </label>
+                <input
+                  type="date"
+                  value={profile.date_of_birth?.split('T')[0] || ''}
+                  onChange={e => setProfile({ ...profile, date_of_birth: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
               <div className="md:col-span-2">
                 <label className="flex items-center">
                   <input
@@ -275,6 +298,13 @@ export default function ProfileEditor() {
           </form>
         </div>
       </div>
+
+      {showEmailPassword && (
+        <EditEmailPassword
+          onClose={() => setShowEmailPassword(false)}
+          currentEmail={profile.email}
+        />
+      )}
     </div>
   );
 }
