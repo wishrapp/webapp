@@ -14,6 +14,7 @@ import SearchModal from '../search/SearchModal';
 import { Database } from '../../lib/supabase-types';
 import LoadingIndicator from '../shared/LoadingIndicator';
 import ConnectionError from '../shared/ConnectionError';
+import { User } from 'lucide-react';
 
 type Item = Database['public']['Tables']['items']['Row'];
 
@@ -78,10 +79,8 @@ export default function Dashboard() {
                 className="w-12 h-12 rounded-full object-cover"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                <span className="text-gray-500 text-lg">
-                  {profile.first_name?.[0]?.toUpperCase() || '?'}
-                </span>
+              <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                <User className="w-6 h-6 text-gray-400 dark:text-gray-500" />
               </div>
             )}
             <div>

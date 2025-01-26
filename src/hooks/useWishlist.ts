@@ -23,6 +23,17 @@ export function useWishlist() {
   const [error, setError] = useState<string | null>(null);
   const [isConnectionError, setIsConnectionError] = useState(false);
 
+  const sortOccasions = (data: Occasion[]) => {
+    return [...data].sort((a, b) => {
+      // "No occasion" should always be first
+      if (a.name === 'No occasion') return -1;
+      if (b.name === 'No occasion') return 1;
+
+      // Then sort alphabetically by name
+      return a.name.localeCompare(b.name);
+    });
+  };
+
   const fetchData = async () => {
     if (!session?.user.id) return;
 
@@ -38,7 +49,6 @@ export function useWishlist() {
           .from('occasions')
           .select('*')
           .eq('user_id', session.user.id)
-          .order('date', { ascending: true }),
       ]);
 
       if (itemsResponse.error) {
@@ -58,7 +68,7 @@ export function useWishlist() {
       }
 
       setItems(itemsResponse.data);
-      setOccasions(occasionsResponse.data);
+      setOccasions(sortOccasions(occasionsResponse.data || []));
       setError(null);
     } catch (error) {
       console.error('Error fetching wishlist data:', error);

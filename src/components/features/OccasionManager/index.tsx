@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useSupabaseClient, useSession } from '@supabase/auth-helpers-react';
 import { Database } from '../../../lib/supabase-types';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Plus, Trash2 } from 'lucide-react';
+import { Calendar, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import ConfirmDialog from '../../shared/ConfirmDialog';
 import AddOccasionModal from './AddOccasionModal';
 import LoadingIndicator from '../../shared/LoadingIndicator';
+import ConnectionError from '../../shared/ConnectionError';
 
 type Occasion = Database['public']['Tables']['occasions']['Row'];
 
@@ -21,34 +22,57 @@ export default function OccasionManager() {
   const navigate = useNavigate();
   const [occasions, setOccasions] = useState<Occasion[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [deleteOccasionId, setDeleteOccasionId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isConnectionError, setIsConnectionError] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  const sortOccasions = (data: Occasion[]) => {
+    return [...data].sort((a, b) => {
+      // "No occasion" should always be first
+      if (a.name === 'No occasion') return -1;
+      if (b.name === 'No occasion') return 1;
+
+      // Then sort alphabetically by name
+      return a.name.localeCompare(b.name);
+    });
+  };
+
+  const fetchOccasions = async () => {
+    if (!session?.user.id) return;
+
+    try {
+      setIsConnectionError(false);
+      const { data, error } = await supabase
+        .from('occasions')
+        .select('*')
+        .eq('user_id', session.user.id);
+
+      if (error) {
+        if (error.message.includes('Failed to fetch')) {
+          setIsConnectionError(true);
+          return;
+        }
+        throw error;
+      }
+
+      const sortedOccasions = sortOccasions(data || []);
+      setOccasions(sortedOccasions);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching occasions:', error);
+      setError('Failed to load occasions');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchOccasions = async () => {
-      if (!session?.user.id) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('occasions')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .order('date', { ascending: true });
-
-        if (error) throw error;
-        setOccasions(data);
-      } catch (error) {
-        console.error('Error fetching occasions:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchOccasions();
   }, [session, supabase]);
 
-  const handleAddOccasion = useCallback(async (formData: OccasionForm) => {
+  const handleAddOccasion = async (formData: OccasionForm) => {
     if (!session?.user.id || isSubmitting) return;
 
     setIsSubmitting(true);
@@ -62,25 +86,15 @@ export default function OccasionManager() {
       });
 
       if (error) throw error;
-
-      // Refresh occasions list
-      const { data, error: fetchError } = await supabase
-        .from('occasions')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('date', { ascending: true });
-
-      if (fetchError) throw fetchError;
-      setOccasions(data || []);
-
-      // Close modal
+      await fetchOccasions();
       setShowAddModal(false);
     } catch (error) {
       console.error('Error adding occasion:', error);
+      setError('Failed to add occasion');
     } finally {
       setIsSubmitting(false);
     }
-  }, [session?.user.id, supabase, isSubmitting]);
+  };
 
   const handleDeleteOccasion = async (occasionId: string) => {
     try {
@@ -90,13 +104,22 @@ export default function OccasionManager() {
         .eq('id', occasionId);
 
       if (error) throw error;
-
-      setOccasions(occasions.filter(occasion => occasion.id !== occasionId));
+      await fetchOccasions();
       setDeleteOccasionId(null);
     } catch (error) {
       console.error('Error deleting occasion:', error);
+      setError('Failed to delete occasion');
     }
   };
+
+  if (isConnectionError) {
+    return (
+      <ConnectionError 
+        message="Unable to connect to the server. Please check your internet connection."
+        onRetry={fetchOccasions}
+      />
+    );
+  }
 
   if (loading) {
     return <LoadingIndicator message="Loading occasions..." />;
@@ -106,23 +129,30 @@ export default function OccasionManager() {
     <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <div className="px-4 py-6 sm:px-0">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">My Occasions</h1>
-          <div className="space-x-4">
+          <div className="flex items-center space-x-4">
             <button
               onClick={() => navigate('/')}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-500"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+              aria-label="Back to Dashboard"
             >
-              Back to Dashboard
+              <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-400" />
             </button>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center space-x-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add New Occasion</span>
-            </button>
+            <h1 className="text-2xl font-bold">My Occasions</h1>
           </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-[#9333ea] text-white px-4 py-2 rounded-md hover:bg-[#7e22ce] flex items-center space-x-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Occasion</span>
+          </button>
         </div>
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-md">
+            {error}
+          </div>
+        )}
 
         {showAddModal && (
           <AddOccasionModal
