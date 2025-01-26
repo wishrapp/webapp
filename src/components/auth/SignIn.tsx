@@ -3,6 +3,7 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '../../lib/supabase-types';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
+import { Gift } from 'lucide-react';
 
 const signInSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -32,14 +33,12 @@ export default function SignIn() {
     try {
       const validatedData = signInSchema.parse(formData);
 
-      // Attempt to sign in
       const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
         email: validatedData.email,
         password: validatedData.password,
       });
 
       if (signInError) {
-        // Handle specific error cases
         if (signInError.message.includes('Email not confirmed')) {
           throw new Error('Please verify your email address before signing in. Check your inbox for the verification link.');
         } else if (signInError.message.includes('Invalid login credentials')) {
@@ -66,7 +65,7 @@ export default function SignIn() {
           return;
         }
 
-        // If profile exists, check if user is admin
+        // Check if user is admin
         const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin');
         if (adminError) throw adminError;
 
@@ -111,20 +110,26 @@ export default function SignIn() {
 
   if (showForgotPassword) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-md w-full space-y-8">
-          <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white flex items-center justify-center">
+        <div className="w-full max-w-md mx-auto p-6 sm:p-8">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center space-x-3 mb-6">
+              <Gift className="w-10 h-10 sm:w-12 sm:h-12 text-purple-600" />
+              <span className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                wishr
+              </span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
               Reset Password
             </h2>
             {resetSent ? (
-              <div className="mt-4 text-center">
+              <div className="mt-4">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Check your email for password reset instructions.
                 </p>
                 <button
                   onClick={() => setShowForgotPassword(false)}
-                  className="mt-4 text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                  className="mt-4 text-[#9333ea] hover:text-[#7e22ce]"
                 >
                   Back to Sign In
                 </button>
@@ -141,7 +146,7 @@ export default function SignIn() {
                     required
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[#9333ea] focus:ring-[#9333ea] dark:bg-gray-700 dark:border-gray-600 text-base sm:text-lg"
                   />
                 </div>
 
@@ -155,14 +160,14 @@ export default function SignIn() {
                   <button
                     type="button"
                     onClick={() => setShowForgotPassword(false)}
-                    className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                    className="text-[#9333ea] hover:text-[#7e22ce] text-base sm:text-lg"
                   >
                     Back to Sign In
                   </button>
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                    className="bg-[#9333ea] text-white px-6 py-3 rounded-lg hover:bg-[#7e22ce] disabled:opacity-50 text-base sm:text-lg"
                   >
                     {isLoading ? 'Sending...' : 'Send Reset Link'}
                   </button>
@@ -176,13 +181,19 @@ export default function SignIn() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white flex items-center justify-center">
+      <div className="w-full max-w-md mx-auto p-6 sm:p-8">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-3 mb-6">
+            <Gift className="w-10 h-10 sm:w-12 sm:h-12 text-purple-600" />
+            <span className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              wishr
+            </span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
             Sign in to your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-sm sm:text-base text-gray-600 dark:text-gray-400">
             Welcome back to Wishr
           </p>
         </div>
@@ -199,7 +210,7 @@ export default function SignIn() {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[#9333ea] focus:ring-[#9333ea] dark:bg-gray-700 dark:border-gray-600 text-base sm:text-lg"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
@@ -215,7 +226,7 @@ export default function SignIn() {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[#9333ea] focus:ring-[#9333ea] dark:bg-gray-700 dark:border-gray-600 text-base sm:text-lg"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
@@ -228,11 +239,11 @@ export default function SignIn() {
             </div>
           )}
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-end">
             <button
               type="button"
               onClick={() => setShowForgotPassword(true)}
-              className="text-sm text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+              className="text-sm sm:text-base text-[#9333ea] hover:text-[#7e22ce]"
             >
               Forgot your password?
             </button>
@@ -242,17 +253,17 @@ export default function SignIn() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base sm:text-lg font-medium text-white bg-[#9333ea] hover:bg-[#7e22ce] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9333ea] disabled:opacity-50"
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
         </form>
 
-        <div className="text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="text-center mt-8">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
             Don't have an account?{' '}
-            <a href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+            <a href="/signup" className="font-medium text-[#9333ea] hover:text-[#7e22ce]">
               Sign up
             </a>
           </p>

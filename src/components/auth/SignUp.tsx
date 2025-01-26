@@ -4,6 +4,7 @@ import { Database } from '../../lib/supabase-types';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { countries } from '../../lib/countries';
+import { Gift } from 'lucide-react';
 
 const signUpSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -131,219 +132,220 @@ export default function SignUp() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-md w-full text-center p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-          <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-4">
-            Check your email
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            We've sent a verification link to {formData.email}. Please click the link to verify your account.
-          </p>
-          <p className="text-gray-500 dark:text-gray-400 mb-4">
-            After verifying your email, you'll be able to sign in.
-          </p>
-          <button
-            onClick={() => navigate('/signin')}
-            className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 font-medium"
-          >
-            Go to Sign In
-          </button>
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8">
+            <div className="flex items-center justify-center space-x-3 mb-6">
+              <Gift className="w-10 h-10 sm:w-12 sm:h-12 text-purple-600" />
+              <span className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                wishr
+              </span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white text-center mb-4">
+              Check your email
+            </h2>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 text-center mb-6">
+              We've sent a verification link to {formData.email}. Please click the link to verify your account.
+            </p>
+            <button
+              onClick={() => navigate('/signin')}
+              className="w-full text-[#9333ea] hover:text-[#7e22ce] font-medium text-base sm:text-lg"
+            >
+              Go to Sign In
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
+  const isFormValid = formData.emailNotifications && formData.termsAccepted;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-        <div>
-          <h2 className="text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Join Wishr to create and share your wishlists
-          </p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm space-y-4">
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email address <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={formData.email}
-                onChange={e => setFormData({ ...formData, email: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-
-            {/* Password */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={formData.password}
-                onChange={e => setFormData({ ...formData, password: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Must be at least 8 characters and include uppercase, lowercase, and numbers
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white flex items-center justify-center px-4 py-8 sm:py-12">
+      <div className="w-full max-w-xl">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+          <div className="p-6 sm:p-8">
+            <div className="text-center mb-8">
+              <div className="flex items-center justify-center space-x-3 mb-6">
+                <Gift className="w-10 h-10 sm:w-12 sm:h-12 text-purple-600" />
+                <span className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  wishr
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
+                Create your account
+              </h2>
+              <p className="mt-2 text-sm sm:text-base text-gray-600 dark:text-gray-400">
+                Join Wishr to create and share your wishlists
               </p>
             </div>
 
-            {/* Username */}
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Username <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                value={formData.username}
-                onChange={e => setFormData({ ...formData, username: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Only letters, numbers, underscores, and hyphens allowed
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-6">
+                {/* Required Fields */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Email address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[#9333ea] focus:ring-[#9333ea] dark:bg-gray-700 dark:border-gray-600 text-base"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Password <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={formData.password}
+                    onChange={e => setFormData({ ...formData, password: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[#9333ea] focus:ring-[#9333ea] dark:bg-gray-700 dark:border-gray-600 text-base"
+                  />
+                  <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                    Must be at least 8 characters and include uppercase, lowercase, and numbers
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Username <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.username}
+                    onChange={e => setFormData({ ...formData, username: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[#9333ea] focus:ring-[#9333ea] dark:bg-gray-700 dark:border-gray-600 text-base"
+                  />
+                  <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                    Only letters, numbers, underscores, and hyphens allowed
+                  </p>
+                </div>
+
+                {/* Optional Fields */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.firstName}
+                      onChange={e => setFormData({ ...formData, firstName: e.target.value })}
+                      className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[#9333ea] focus:ring-[#9333ea] dark:bg-gray-700 dark:border-gray-600 text-base"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.lastName}
+                      onChange={e => setFormData({ ...formData, lastName: e.target.value })}
+                      className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[#9333ea] focus:ring-[#9333ea] dark:bg-gray-700 dark:border-gray-600 text-base"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Date of Birth
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.dateOfBirth}
+                      onChange={e => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                      className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[#9333ea] focus:ring-[#9333ea] dark:bg-gray-700 dark:border-gray-600 text-base"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Country
+                    </label>
+                    <select
+                      value={formData.country}
+                      onChange={e => setFormData({ ...formData, country: e.target.value })}
+                      className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[#9333ea] focus:ring-[#9333ea] dark:bg-gray-700 dark:border-gray-600 text-base"
+                    >
+                      <option value="">Select a country</option>
+                      {countries.map(country => (
+                        <option key={country.code} value={country.code}>
+                          {country.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Checkboxes */}
+                <div className="space-y-4">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.emailNotifications}
+                      onChange={e => setFormData({ ...formData, emailNotifications: e.target.checked })}
+                      className="rounded-lg border-gray-300 text-[#9333ea] shadow-sm focus:border-[#9333ea] focus:ring-[#9333ea] w-5 h-5"
+                    />
+                    <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">
+                      I agree to receive email notifications from Wishr
+                    </span>
+                  </label>
+
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={formData.termsAccepted}
+                      onChange={e => setFormData({ ...formData, termsAccepted: e.target.checked })}
+                      className="rounded-lg border-gray-300 text-[#9333ea] shadow-sm focus:border-[#9333ea] focus:ring-[#9333ea] w-5 h-5"
+                    />
+                    <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">
+                      I agree to the{' '}
+                      <a href="/terms" className="text-[#9333ea] hover:text-[#7e22ce]">
+                        Terms and Conditions
+                      </a>
+                    </span>
+                  </label>
+                </div>
+
+                {error && (
+                  <div className="text-sm text-red-600 dark:text-red-400 text-center bg-red-50 dark:bg-red-900/30 p-4 rounded-lg">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading || !isFormValid}
+                  className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white transition-colors
+                    ${isFormValid 
+                      ? 'bg-[#9333ea] hover:bg-[#7e22ce] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9333ea]' 
+                      : 'bg-purple-200 cursor-not-allowed'
+                    } disabled:opacity-50`}
+                >
+                  {isLoading ? 'Creating account...' : 'Sign up'}
+                </button>
+              </div>
+            </form>
+
+            <div className="text-center mt-8">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Already have an account?{' '}
+                <a href="/signin" className="font-medium text-[#9333ea] hover:text-[#7e22ce]">
+                  Sign in
+                </a>
               </p>
             </div>
-
-            {/* Optional Fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  First Name
-                </label>
-                <input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  value={formData.firstName}
-                  onChange={e => setFormData({ ...formData, firstName: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Last Name
-                </label>
-                <input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  value={formData.lastName}
-                  onChange={e => setFormData({ ...formData, lastName: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Date of Birth
-              </label>
-              <input
-                id="dateOfBirth"
-                name="dateOfBirth"
-                type="date"
-                value={formData.dateOfBirth}
-                onChange={e => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="country" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Country
-              </label>
-              <select
-                id="country"
-                name="country"
-                value={formData.country}
-                onChange={e => setFormData({ ...formData, country: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="">Select a country</option>
-                {countries.map(country => (
-                  <option key={country.code} value={country.code}>
-                    {country.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Checkboxes */}
-            <div className="space-y-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.emailNotifications}
-                  onChange={e => setFormData({ ...formData, emailNotifications: e.target.checked })}
-                  className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-                <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-                  I agree to receive email notifications from Wishr
-                </span>
-              </label>
-
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  required
-                  checked={formData.termsAccepted}
-                  onChange={e => setFormData({ ...formData, termsAccepted: e.target.checked })}
-                  className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-                <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-                  I agree to the{' '}
-                  <a href="/terms" className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
-                    Terms and Conditions
-                  </a>
-                </span>
-              </label>
-            </div>
           </div>
-
-          {error && (
-            <div className="text-sm text-red-600 dark:text-red-400 text-center bg-red-50 dark:bg-red-900/30 p-3 rounded-md">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {isLoading ? 'Creating account...' : 'Sign up'}
-            </button>
-          </div>
-        </form>
-
-        <div className="text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Already have an account?{' '}
-            <a href="/signin" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
-              Sign in
-            </a>
-          </p>
         </div>
       </div>
     </div>
