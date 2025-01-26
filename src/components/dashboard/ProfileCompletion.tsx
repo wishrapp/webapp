@@ -6,13 +6,19 @@ import { z } from 'zod';
 
 const profileSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  dateOfBirth: z.string().optional(),
-  country: z.string().optional(),
+  firstName: z.string().optional().nullable(),
+  lastName: z.string().optional().nullable(),
+  dateOfBirth: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),
 });
 
-type ProfileForm = z.infer<typeof profileSchema>;
+type ProfileForm = {
+  username: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  country: string;
+};
 
 interface ProfileCompletionProps {
   onComplete: () => void;
@@ -37,6 +43,11 @@ export default function ProfileCompletion({ onComplete, onClose }: ProfileComple
     setError(null);
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) {
+        throw new Error('Not authenticated');
+      }
+
       // Validate form data
       const validatedData = profileSchema.parse(formData);
 
@@ -50,7 +61,7 @@ export default function ProfileCompletion({ onComplete, onClose }: ProfileComple
           date_of_birth: validatedData.dateOfBirth || null,
           country: validatedData.country || null,
         })
-        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+        .eq('id', user.id);
 
       if (updateError) throw updateError;
 
