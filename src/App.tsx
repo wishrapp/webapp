@@ -11,7 +11,6 @@ export default function App() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showProfileReminder, setShowProfileReminder] = useState(false);
 
   useEffect(() => {
     const checkUserStatus = async () => {
@@ -21,22 +20,6 @@ export default function App() {
       }
 
       try {
-        // Check if user has a profile
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        if (profileError && profileError.code !== 'PGRST116') {
-          throw profileError;
-        }
-
-        // If profile is incomplete, show reminder
-        if (!profile || !profile.username) {
-          setShowProfileReminder(true);
-        }
-
         // Check if user is admin
         const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin');
         if (adminError) throw adminError;
