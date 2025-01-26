@@ -18,7 +18,7 @@ import AdminLayout from './components/admin/AdminLayout'
 import AdminDashboard from './components/admin/Dashboard'
 import AdminUsers from './components/admin/Users/index'
 import AdminEmails from './components/admin/Emails'
-import AdminAffiliates from './components/admin/Affiliates'
+import AdminAffiliates from './components/admin/affiliates/index'
 import './index.css'
 
 // Initialize Supabase session from localStorage

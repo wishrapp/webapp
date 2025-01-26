@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '../../../lib/supabase-types';
 import { Save, CheckCircle2, AlertCircle } from 'lucide-react';
+import LoadingIndicator from '../../shared/LoadingIndicator';
+import ConnectionError from '../../shared/ConnectionError';
 
 export default function AmazonAffiliate() {
   const supabase = useSupabaseClient<Database>();
@@ -10,28 +12,40 @@ export default function AmazonAffiliate() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [isConnectionError, setIsConnectionError] = useState(false);
+
+  const fetchSettings = async () => {
+    try {
+      setIsConnectionError(false);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from('affiliate_settings')
+        .select('settings')
+        .eq('platform', 'amazon')
+        .maybeSingle();
+
+      if (error) {
+        if (error.message.includes('Failed to fetch')) {
+          setIsConnectionError(true);
+          return;
+        }
+        // PGRST116 means no rows found - this is expected for first-time setup
+        if (error.code !== 'PGRST116') throw error;
+      }
+
+      if (data?.settings) {
+        setAssociateId((data.settings as any).associateId || '');
+      }
+    } catch (error) {
+      console.error('Error fetching Amazon settings:', error);
+      setError('Failed to load Amazon settings');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('affiliate_settings')
-          .select('settings')
-          .eq('platform', 'amazon')
-          .single();
-
-        if (error && error.code !== 'PGRST116') throw error;
-        if (data?.settings) {
-          setAssociateId((data.settings as any).associateId || '');
-        }
-      } catch (error) {
-        console.error('Error fetching Amazon settings:', error);
-        setError('Failed to load Amazon settings');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchSettings();
   }, [supabase]);
 
@@ -68,7 +82,14 @@ export default function AmazonAffiliate() {
           onConflict: 'platform'
         });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('Failed to fetch')) {
+          setIsConnectionError(true);
+          return;
+        }
+        throw error;
+      }
+      
       setSuccess(true);
     } catch (error) {
       console.error('Error saving Amazon settings:', error);
@@ -78,8 +99,17 @@ export default function AmazonAffiliate() {
     }
   };
 
+  if (isConnectionError) {
+    return (
+      <ConnectionError 
+        message="Unable to connect to the server. Please check your internet connection."
+        onRetry={fetchSettings}
+      />
+    );
+  }
+
   if (isLoading) {
-    return <div>Loading Amazon settings...</div>;
+    return <LoadingIndicator message="Loading Amazon settings..." />;
   }
 
   return (
@@ -97,7 +127,7 @@ export default function AmazonAffiliate() {
               value={associateId}
               onChange={(e) => setAssociateId(e.target.value)}
               placeholder="e.g., wishr-21"
-              className="flex-1 min-w-0 block w-full px-3 py-2 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:border-indigo-500 focus:ring-indigo-500"
+              className="flex-1 min-w-0 block w-full px-3 py-2 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:border-[#9333ea] focus:ring-[#9333ea]"
             />
           </div>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -130,7 +160,7 @@ export default function AmazonAffiliate() {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#9333ea] hover:bg-[#7e22ce] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9333ea] disabled:opacity-50"
         >
           <Save className="w-4 h-4 mr-2" />
           {isSaving ? 'Saving...' : 'Save Amazon Settings'}
