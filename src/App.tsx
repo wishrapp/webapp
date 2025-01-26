@@ -49,7 +49,6 @@ export default function App() {
           last_name: '',
           country: 'US',
           date_of_birth: new Date().toISOString(),
-          telephone: '',
           email_notifications: true,
           terms_accepted: true,
           created_at: new Date().toISOString(),

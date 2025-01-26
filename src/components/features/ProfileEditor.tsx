@@ -3,7 +3,6 @@ import { useSupabaseClient, useSession } from '@supabase/auth-helpers-react';
 import { Database } from '../../lib/supabase-types';
 import { useNavigate } from 'react-router-dom';
 import { countries } from '../../lib/countries';
-import { isValidPhoneNumber } from 'libphonenumber-js';
 import { uploadProfileImage } from '../../lib/image';
 import LoadingIndicator from '../shared/LoadingIndicator';
 import ConnectionError from '../shared/ConnectionError';
@@ -95,10 +94,6 @@ export default function ProfileEditor() {
     setError(null);
 
     try {
-      if (profile.telephone && !isValidPhoneNumber(profile.telephone)) {
-        throw new Error('Invalid phone number');
-      }
-
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -106,7 +101,6 @@ export default function ProfileEditor() {
           last_name: profile.last_name,
           username: profile.username,
           country: profile.country,
-          telephone: profile.telephone,
           email_notifications: profile.email_notifications,
         })
         .eq('id', session.user.id);
@@ -248,18 +242,6 @@ export default function ProfileEditor() {
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={profile.telephone || ''}
-                  onChange={e => setProfile({ ...profile, telephone: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                />
               </div>
 
               <div className="md:col-span-2">
