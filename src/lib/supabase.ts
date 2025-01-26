@@ -26,10 +26,8 @@ export const supabase = createClient<Database>(
   {
     auth: {
       persistSession: true,
-      autoRefreshToken: true,
-      storage: localStorage,
-      storageKey: 'sb-eawuqfqcrhwqdujwiorf-auth-token',
       detectSessionInUrl: true,
+      autoRefreshToken: true,
       flowType: 'pkce'
     }
   }
@@ -38,8 +36,10 @@ export const supabase = createClient<Database>(
 // Listen for auth state changes
 supabase.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' && session) {
-    localStorage.setItem('sb-eawuqfqcrhwqdujwiorf-auth-token', JSON.stringify(session));
+    // Store session in localStorage
+    localStorage.setItem('supabase.auth.token', JSON.stringify(session));
   } else if (event === 'SIGNED_OUT') {
-    localStorage.removeItem('sb-eawuqfqcrhwqdujwiorf-auth-token');
+    // Clear session from localStorage
+    localStorage.removeItem('supabase.auth.token');
   }
 });

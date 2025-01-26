@@ -8,6 +8,8 @@ import App from './App'
 import SignUp from './components/auth/SignUp'
 import SignIn from './components/auth/SignIn'
 import VerifyEmail from './components/auth/VerifyEmail'
+import ResetPassword from './components/auth/ResetPassword'
+import Terms from './components/auth/Terms'
 import WishlistManager from './components/features/WishlistManager'
 import WishlistViewer from './components/features/WishlistViewer'
 import OccasionManager from './components/features/OccasionManager'
@@ -36,6 +38,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/verify" element={<VerifyEmail />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/terms" element={<Terms />} />
             
             {/* Protected Routes */}
             <Route path="/dashboard" element={<App />} />
