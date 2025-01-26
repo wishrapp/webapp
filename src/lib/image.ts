@@ -67,13 +67,8 @@ export async function uploadProfileImage(userId: string, file: File): Promise<st
       throw new Error('File must be an image');
     }
 
-    // Compress the image first
+    // Compress the image
     const compressedImage = await compressImage(file);
-
-    // Check compressed size
-    if (compressedImage.size > 5 * 1024 * 1024) {
-      throw new Error('Image is too large. Please choose a smaller image.');
-    }
 
     // Create a new file with .webp extension
     const filename = `${userId}-${Date.now()}.webp`;
@@ -84,23 +79,31 @@ export async function uploadProfileImage(userId: string, file: File): Promise<st
       .from('profile-images')
       .upload(filename, webpFile, {
         cacheControl: '3600',
-        upsert: false
+        upsert: true // Enable overwriting of existing files
       });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Storage upload error:', error);
+      throw new Error('Failed to upload image to storage');
+    }
+
+    if (!data?.path) {
+      throw new Error('No path returned from storage upload');
+    }
 
     // Get the public URL
     const { data: { publicUrl } } = supabase.storage
       .from('profile-images')
       .getPublicUrl(data.path);
 
+    if (!publicUrl) {
+      throw new Error('Failed to get public URL for uploaded image');
+    }
+
     return publicUrl;
   } catch (error) {
-    console.error('Error uploading image:', error);
-    if (error instanceof Error) {
-      throw new Error(error.message);
-    }
-    throw new Error('Failed to upload image');
+    console.error('Error in uploadProfileImage:', error);
+    throw error instanceof Error ? error : new Error('Failed to upload image');
   }
 }
 
@@ -111,13 +114,8 @@ export async function uploadWishlistImage(userId: string, file: File): Promise<s
       throw new Error('File must be an image');
     }
 
-    // Compress the image first
+    // Compress the image
     const compressedImage = await compressImage(file);
-
-    // Check compressed size
-    if (compressedImage.size > 5 * 1024 * 1024) {
-      throw new Error('Image is too large. Please choose a smaller image.');
-    }
 
     // Create a new file with .webp extension
     const filename = `${userId}-${Date.now()}.webp`;
@@ -128,22 +126,30 @@ export async function uploadWishlistImage(userId: string, file: File): Promise<s
       .from('wishlist-images')
       .upload(filename, webpFile, {
         cacheControl: '3600',
-        upsert: false
+        upsert: true // Enable overwriting of existing files
       });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Storage upload error:', error);
+      throw new Error('Failed to upload image to storage');
+    }
+
+    if (!data?.path) {
+      throw new Error('No path returned from storage upload');
+    }
 
     // Get the public URL
     const { data: { publicUrl } } = supabase.storage
       .from('wishlist-images')
       .getPublicUrl(data.path);
 
+    if (!publicUrl) {
+      throw new Error('Failed to get public URL for uploaded image');
+    }
+
     return publicUrl;
   } catch (error) {
-    console.error('Error uploading image:', error);
-    if (error instanceof Error) {
-      throw new Error(error.message);
-    }
-    throw new Error('Failed to upload image');
+    console.error('Error in uploadWishlistImage:', error);
+    throw error instanceof Error ? error : new Error('Failed to upload image');
   }
 }
