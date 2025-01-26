@@ -339,7 +339,6 @@ export interface Database {
           profile_image_url?: string | null
           reported?: boolean
           suspended?: boolean
-          telephone: string
           terms_accepted?: boolean
           updated_at?: string
           username: string
@@ -359,7 +358,6 @@ export interface Database {
           profile_image_url?: string | null
           reported?: boolean
           suspended?: boolean
-          telephone?: string
           terms_accepted?: boolean
           updated_at?: string
           username?: string
