@@ -4,7 +4,7 @@ import { Database } from '../lib/supabase-types';
 import { sendAccessRequestEmail } from '../lib/email/wishlist';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
-type SearchResult = Pick<Profile, 'id' | 'username' | 'first_name' | 'last_name' | 'profile_image_url'>;
+type SearchResult = Pick<Profile, 'id' | 'username' | 'first_name' | 'last_name' | 'profile_image_url' | 'email'>;
 
 export function useSearch() {
   const session = useSession();
@@ -72,7 +72,7 @@ export function useSearch() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, first_name, last_name, profile_image_url')
+        .select('id, username, first_name, last_name, profile_image_url, email')
         .ilike('username', `%${query}%`)
         .neq('id', session.user.id)
         .limit(10);
@@ -92,15 +92,15 @@ export function useSearch() {
 
     try {
       // Check if request already exists
-      const { data: existingRequest, error: checkError } = await supabase
+      const { data: existingRequests, error: checkError } = await supabase
         .from('access_requests')
         .select('*')
         .eq('requester_id', session.user.id)
-        .eq('target_id', targetId)
-        .single();
+        .eq('target_id', targetId);
 
-      if (checkError && checkError.code !== 'PGRST116') throw checkError;
-      if (existingRequest) {
+      if (checkError) throw checkError;
+      
+      if (existingRequests && existingRequests.length > 0) {
         return { success: false, message: 'You have already requested access to this wishlist' };
       }
 
@@ -112,8 +112,11 @@ export function useSearch() {
         .single();
 
       if (userError) throw userError;
+      if (!targetUser?.email) {
+        throw new Error('Could not find target user email');
+      }
 
-      // Create access request
+      // Create access request and message in a transaction
       const { error: requestError } = await supabase
         .from('access_requests')
         .insert({
@@ -124,6 +127,19 @@ export function useSearch() {
 
       if (requestError) throw requestError;
 
+      // Create message
+      const { error: messageError } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: session.user.id,
+          recipient_id: targetId,
+          subject: 'New Access Request',
+          content: `${username} has requested access to view your wishlist.`,
+          read: false
+        });
+
+      if (messageError) throw messageError;
+
       // Send email notification
       await sendAccessRequestEmail(username, targetUser.email);
 
@@ -133,7 +149,7 @@ export function useSearch() {
       return { success: true, message: 'Access request sent successfully' };
     } catch (error) {
       console.error('Error sending access request:', error);
-      return { success: false, message: 'Failed to send access request' };
+      return { success: false, message: error instanceof Error ? error.message : 'Failed to send access request' };
     }
   };
 

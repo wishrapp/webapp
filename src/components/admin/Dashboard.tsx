@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '../../lib/supabase-types';
+import emailjs from '@emailjs/browser';
 import {
   LineChart,
   Line,
@@ -25,6 +26,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isConnectionError, setIsConnectionError] = useState(false);
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
 
   const fetchStats = async () => {
     try {
@@ -95,6 +97,40 @@ export default function AdminDashboard() {
     fetchStats();
   }, [supabase]);
 
+  const sendTestEmail = async () => {
+    setSendingTestEmail(true);
+    try {
+      const templateParams = {
+        to_email: 'jpowell79@ymail.com',
+        subject: 'wishr.com EmailJS test',
+        message: 'a simple test to confirm EmailJS is setup correctly',
+        template_id: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        user_name: 'Admin Test',
+        user_email: 'jpowell79@ymail.com',
+        // Add any other variables your template might require
+        from_name: 'Wishr Admin',
+        reply_to: 'no-reply@wishr.com'
+      };
+
+      console.log('Sending test email with params:', templateParams);
+      
+      const response = await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        templateParams,
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
+
+      console.log('EmailJS Response:', response);
+      alert('Test email sent successfully! Check console for details.');
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      alert(`Failed to send test email: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setSendingTestEmail(false);
+    }
+  };
+
   if (isConnectionError) {
     return (
       <ConnectionError 
@@ -114,7 +150,16 @@ export default function AdminDashboard() {
 
   return (
     <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-      <h2 className="text-2xl font-bold mb-6">Dashboard</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Dashboard</h2>
+        <button
+          onClick={sendTestEmail}
+          disabled={sendingTestEmail}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+        >
+          {sendingTestEmail ? 'Sending...' : 'Send Test Email'}
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-indigo-50 dark:bg-indigo-900/10 p-6 rounded-lg">
