@@ -5,7 +5,8 @@ import { Database } from '../../lib/supabase-types';
 import { 
   LayoutDashboard, 
   Users, 
-  Mail, 
+  Mail,
+  MessageSquare,
   Store, 
   LogOut,
   Gift
@@ -100,6 +101,17 @@ export default function AdminLayout() {
                 >
                   <Users className="w-4 h-4 mr-2" />
                   Users
+                </a>
+                <a
+                  href="/admin/messages"
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors
+                    ${isActivePath('/admin/messages')
+                      ? 'border-[#9333ea] text-gray-900 dark:text-white'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 hover:text-gray-700 dark:hover:text-gray-300'
+                    }`}
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Messages
                 </a>
                 <a
                   href="/admin/emails"

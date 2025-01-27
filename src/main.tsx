@@ -6,7 +6,7 @@ import { ThemeProvider } from './components/shared/ThemeProvider'
 import { supabase } from './lib/supabase'
 import App from './App'
 import SignUp from './components/auth/SignUp/index'
-import SignIn from './components/auth/SignIn/index' // Updated import path
+import SignIn from './components/auth/SignIn/index'
 import VerifyEmail from './components/auth/VerifyEmail'
 import ResetPassword from './components/auth/ResetPassword'
 import WishlistManager from './components/features/WishlistManager'
@@ -17,6 +17,7 @@ import Messages from './components/features/Messages'
 import AdminLayout from './components/admin/AdminLayout'
 import AdminDashboard from './components/admin/Dashboard'
 import AdminUsers from './components/admin/Users/index'
+import AdminMessages from './components/admin/Messages'
 import AdminEmails from './components/admin/Emails'
 import AdminAffiliates from './components/admin/affiliates/index'
 import './index.css'
@@ -51,6 +52,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
+              <Route path="messages" element={<AdminMessages />} />
               <Route path="emails" element={<AdminEmails />} />
               <Route path="affiliates" element={<AdminAffiliates />} />
             </Route>

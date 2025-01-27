@@ -11,6 +11,7 @@ export default function SystemMessages() {
   const supabase = useSupabaseClient<Database>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -21,13 +22,14 @@ export default function SystemMessages() {
           .from('messages')
           .select('*')
           .eq('recipient_id', session.user.id)
-          .eq('sender_id', 'system')
+          .eq('sender_id', '00000000-0000-0000-0000-000000000000') // System user UUID
           .order('created_at', { ascending: false });
 
         if (error) throw error;
         setMessages(data || []);
       } catch (error) {
         console.error('Error fetching system messages:', error);
+        setError('Failed to load system messages');
       } finally {
         setLoading(false);
       }
@@ -38,6 +40,14 @@ export default function SystemMessages() {
 
   if (loading) {
     return <LoadingIndicator message="Loading system messages..." />;
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center text-red-600 dark:text-red-400">
+        {error}
+      </div>
+    );
   }
 
   if (messages.length === 0) {
@@ -52,14 +62,16 @@ export default function SystemMessages() {
     <div className="divide-y divide-gray-200 dark:divide-gray-700">
       {messages.map(message => (
         <div key={message.id} className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {message.subject}
-          </h3>
-          <p className="mt-1 text-gray-600 dark:text-gray-400">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              {message.subject}
+            </h3>
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+            </span>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
             {message.content}
-          </p>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
           </p>
         </div>
       ))}
