@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { Database } from '../../../lib/supabase-types';
 import { uploadProfileImage } from '../../../lib/image';
-import { User } from 'lucide-react';
+import { User, Camera } from 'lucide-react';
 
 interface ProfileImageProps {
   userId: string;
@@ -46,6 +46,13 @@ export default function ProfileImage({ userId, imageUrl, onImageUpdate }: Profil
     }
   };
 
+  const openCamera = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.capture = 'user'; // Set camera to front-facing
+      fileInputRef.current.click();
+    }
+  };
+
   return (
     <div className="mb-6">
       <div className="flex items-center space-x-6">
@@ -67,24 +74,31 @@ export default function ProfileImage({ userId, imageUrl, onImageUpdate }: Profil
             </div>
           )}
         </div>
-        <div>
+        <div className="space-y-2">
           <input
             type="file"
             ref={fileInputRef}
             accept="image/*"
+            capture="user"
             className="hidden"
             onChange={handleImageUpload}
           />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="bg-white dark:bg-gray-700 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
-          >
-            Change Photo
-          </button>
-          <p className="mt-1 text-sm text-gray-500">
-            JPG, PNG or GIF (max. 5MB)
-          </p>
+          <div className="flex space-x-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="bg-white dark:bg-gray-700 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+            >
+              Change Photo
+            </button>
+            <button
+              type="button"
+              onClick={openCamera}
+              className="bg-white dark:bg-gray-700 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+            >
+              <Camera className="w-5 h-5" />
+            </button>
+          </div>
           {uploadError && (
             <p className="mt-1 text-sm text-red-600 dark:text-red-400">
               {uploadError}
