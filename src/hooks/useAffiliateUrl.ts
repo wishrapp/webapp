@@ -16,7 +16,7 @@ export function useAffiliateUrl(originalUrl: string | null): string | null {
 
       try {
         // Check if it's an Amazon URL
-        if (!originalUrl.includes('amazon')) {
+        if (!originalUrl.includes('amazon') && !originalUrl.includes('amzn')) {
           setAffiliateUrl(originalUrl);
           return;
         }
@@ -44,7 +44,7 @@ export function useAffiliateUrl(originalUrl: string | null): string | null {
         }
 
         // Transform the URL
-        const transformedUrl = createAffiliateUrl(originalUrl, associateId);
+        const transformedUrl = await createAffiliateUrl(originalUrl, associateId);
         setAffiliateUrl(transformedUrl || originalUrl);
       } catch (error) {
         console.error('Error transforming affiliate URL:', error);

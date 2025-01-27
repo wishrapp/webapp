@@ -76,7 +76,10 @@ export default function AmazonAffiliate() {
         .from('affiliate_settings')
         .upsert({
           platform: 'amazon',
-          settings: { associateId },
+          settings: { 
+            associateId,
+            resolveShortUrls: true // Enable short URL resolution
+          },
           active: true
         }, {
           onConflict: 'platform'
@@ -131,7 +134,7 @@ export default function AmazonAffiliate() {
             />
           </div>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Enter your Amazon Associate ID to enable affiliate links
+            Enter your Amazon Associate ID to enable affiliate links. Both standard Amazon URLs and shortened URLs (amzn.eu) will be processed.
           </p>
         </div>
 
